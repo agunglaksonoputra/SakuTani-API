@@ -27,7 +27,6 @@ module.exports = (sequelize, DataTypes) => {
     {
       tableName: "monthly_reports",
       timestamps: true,
-      paranoid: true,
     }
   );
   return MonthlyReport;

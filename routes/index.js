@@ -3,11 +3,13 @@ const router = express.Router();
 
 // Import semua route modular
 const excelRoute = require("./excel.routes");
+const monthlyReportRoute = require("./monthly_report.routes");
 // const userRoute = require("./user.route");
 // const ownerRoute = require("./owner.route");
 
 // Daftarkan dengan prefix masing-masing
 router.use("/excel", excelRoute);
+router.use("/report", monthlyReportRoute);
 // router.use("/users", userRoute);
 // router.use("/owners", ownerRoute);
 
