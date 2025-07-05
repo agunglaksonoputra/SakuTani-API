@@ -22,16 +22,28 @@ module.exports = {
         onDelete: "RESTRICT",
         allowNull: false,
       },
-      item_name: {
-        type: Sequelize.STRING,
+      vegetable_id: {
+        type: Sequelize.INTEGER,
+        references: {
+          model: "master_vegetables",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
         allowNull: false,
       },
       quantity: {
         type: Sequelize.DECIMAL(12, 2),
         allowNull: false,
       },
-      unit: {
-        type: Sequelize.STRING,
+      unit_id: {
+        type: Sequelize.INTEGER,
+        references: {
+          model: "master_units",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
         allowNull: false,
       },
       weight_per_unit_gram: {

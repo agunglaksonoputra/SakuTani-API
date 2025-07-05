@@ -20,8 +20,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL(12, 2),
         allowNull: false,
       },
-      unit: {
-        type: DataTypes.STRING,
+      unit_id: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: "master_units",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
         allowNull: false,
       },
       price_per_unit: {
