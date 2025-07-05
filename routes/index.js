@@ -6,6 +6,7 @@ const excelRoute = require("./excel.routes");
 const monthlyReportRoute = require("./monthly-report.routes");
 const ownerRoute = require("./owner.routes");
 const profitShareRoute = require("./profit-share.routes");
+const userBalanceRoute = require("./user-balance.routes");
 // const userRoute = require("./user.route");
 // const ownerRoute = require("./owner.route");
 
@@ -14,6 +15,7 @@ router.use("/excel", excelRoute);
 router.use("/report", monthlyReportRoute);
 router.use("/owner", ownerRoute);
 router.use("/profit-share", profitShareRoute);
+router.use("/user-balance", userBalanceRoute);
 // router.use("/users", userRoute);
 // router.use("/owners", ownerRoute);
 
