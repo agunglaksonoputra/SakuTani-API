@@ -96,7 +96,10 @@ exports.importSales = async (req, res) => {
 
     // Jika tidak ada data valid
     if (rows.length === 0) {
-      return res.status(400).json({ success: false, message: "Tidak ada data yang valid untuk diimpor." });
+      return res.status(400).json({
+        success: false,
+        message: "No valid data found to import.",
+      });
     }
 
     // Simpan ke database
@@ -104,13 +107,13 @@ exports.importSales = async (req, res) => {
 
     return res.json({
       success: true,
-      message: `${rows.length} data berhasil diimpor.`,
+      message: `${rows.length} records have been successfully imported.`,
     });
   } catch (err) {
-    console.error("Gagal impor:", err);
+    console.error("Import failed:", err);
     res.status(500).json({
       success: false,
-      message: "Gagal mengimpor data.",
+      message: "Failed to import data.",
       error: err.message,
     });
   }
@@ -184,7 +187,10 @@ exports.importExpenses = async (req, res) => {
 
     // Jika tidak ada data valid
     if (rows.length === 0) {
-      return res.status(400).json({ success: false, message: "Tidak ada data yang valid untuk diimpor." });
+      return res.status(400).json({
+        success: false,
+        message: "No valid data found to import.",
+      });
     }
 
     // Simpan ke database
@@ -192,13 +198,13 @@ exports.importExpenses = async (req, res) => {
 
     return res.json({
       success: true,
-      message: `${rows.length} data berhasil diimpor.`,
+      message: `${rows.length} records have been successfully imported.`,
     });
   } catch (err) {
-    console.error("Gagal impor:", err);
+    console.error("Import failed:", err);
     res.status(500).json({
       success: false,
-      message: "Gagal mengimpor data.",
+      message: "Failed to import data.",
       error: err.message,
     });
   }
