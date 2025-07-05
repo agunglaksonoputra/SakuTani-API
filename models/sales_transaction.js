@@ -19,15 +19,19 @@ module.exports = (sequelize, DataTypes) => {
         },
         onUpdate: "CASCADE",
         onDelete: "RESTRICT",
+        allowNull: false,
       },
       item_name: {
         type: DataTypes.STRING,
+        allowNull: false,
       },
       quantity: {
         type: DataTypes.DECIMAL(12, 2),
+        allowNull: false,
       },
       unit: {
         type: DataTypes.STRING,
+        allowNull: false,
       },
       weight_per_unit_gram: {
         type: DataTypes.DECIMAL(12, 2),
@@ -40,9 +44,11 @@ module.exports = (sequelize, DataTypes) => {
       },
       total_price: {
         type: DataTypes.DECIMAL(12, 2),
+        allowNull: false,
       },
       notes: {
         type: DataTypes.TEXT,
+        defaultValue: null,
       },
     },
     {

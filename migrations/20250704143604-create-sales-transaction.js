@@ -20,9 +20,11 @@ module.exports = {
         },
         onUpdate: "CASCADE",
         onDelete: "RESTRICT",
+        allowNull: false,
       },
       item_name: {
         type: Sequelize.STRING,
+        allowNull: false,
       },
       quantity: {
         type: Sequelize.DECIMAL(12, 2),
