@@ -36,8 +36,14 @@ module.exports = {
         type: Sequelize.DECIMAL(12, 2),
         allowNull: false,
       },
-      unit: {
-        type: Sequelize.STRING,
+      unit_id: {
+        type: Sequelize.INTEGER,
+        references: {
+          model: "master_units",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
         allowNull: false,
       },
       weight_per_unit_gram: {
