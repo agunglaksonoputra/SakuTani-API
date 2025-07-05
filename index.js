@@ -1,20 +1,18 @@
-require("dotenv").config();
+// require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const app = express();
 
 const db = require("./models");
+const routes = require("./routes");
+const authRoutes = require("./routes/auth.routes");
+const auth = require("./middlewares/auth.middleware");
 
 app.use(cors());
 app.use(express.json());
 
-const routes = require("./routes");
-app.use("/api", routes);
-
-// Root endpoint opsional
-app.get("/", (req, res) => {
-  res.send("🌐 Server is running");
-});
+app.use("/auth", authRoutes);
+app.use("/api", auth, routes);
 
 const PORT = process.env.PORT || 3000;
 
