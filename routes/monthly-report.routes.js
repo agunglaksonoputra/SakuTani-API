@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const monthlyReportController = require("../controllers/monthly_report.controller");
+const monthlyReportController = require("../controllers/monthly-report.controller");
 
 router.get("/", monthlyReportController.getAllReports);
 router.get("/:date", monthlyReportController.getReportByDate); // contoh: /2025-07
