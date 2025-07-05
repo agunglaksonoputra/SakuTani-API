@@ -21,8 +21,14 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: "RESTRICT",
         allowNull: false,
       },
-      item_name: {
-        type: DataTypes.STRING,
+      vegetable_id: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: "master_vegetables",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
         allowNull: false,
       },
       quantity: {
