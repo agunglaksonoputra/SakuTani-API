@@ -3,8 +3,9 @@ const router = express.Router();
 
 // Import semua route modular
 const excelRoute = require("./excel.routes");
-const monthlyReportRoute = require("./monthly_report.routes");
+const monthlyReportRoute = require("./monthly-report.routes");
 const ownerRoute = require("./owner.routes");
+const profitShareRoute = require("./profit-share.routes");
 // const userRoute = require("./user.route");
 // const ownerRoute = require("./owner.route");
 
@@ -12,6 +13,7 @@ const ownerRoute = require("./owner.routes");
 router.use("/excel", excelRoute);
 router.use("/report", monthlyReportRoute);
 router.use("/owner", ownerRoute);
+router.use("/profit-share", profitShareRoute);
 // router.use("/users", userRoute);
 // router.use("/owners", ownerRoute);
 

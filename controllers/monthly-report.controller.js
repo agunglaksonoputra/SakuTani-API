@@ -1,4 +1,4 @@
-const monthlyReport = require("../services/monthly_report.service");
+const monthlyReport = require("../services/monthly-report.service");
 
 module.exports.generateReport = async (req, res) => {
   try {
