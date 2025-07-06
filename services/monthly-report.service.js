@@ -79,3 +79,22 @@ module.exports.generateAllMonthlyReports = async () => {
 
   return result;
 };
+
+module.exports.getOrGenerateCurrentMonthReport = async () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, "0");
+  const monthlyReportDate = `${year}-${month}-01`;
+
+  // Cek apakah laporan bulan ini sudah ada
+  let report = await MonthlyReport.findOne({
+    where: { date: monthlyReportDate },
+  });
+
+  // Jika belum ada, generate laporan
+  if (!report) {
+    report = await module.exports.generateMonthlyReport(monthlyReportDate);
+  }
+
+  return report;
+};
