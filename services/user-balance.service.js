@@ -1,5 +1,4 @@
 const { ProfitShare, WithdrawLog, UserBalance, Owner } = require("../models");
-const { update } = require("./profit-share.service");
 
 module.exports.getAll = async () => {
   const results = await UserBalance.findAll({
