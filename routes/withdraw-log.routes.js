@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const withdrawLogcontroller = require("../controllers/withdraw-log.container");
+const withdrawLogcontroller = require("../controllers/withdraw-log.controller");
 
 router.get("/", withdrawLogcontroller.getAll);
 router.get("/:id", withdrawLogcontroller.getById);
