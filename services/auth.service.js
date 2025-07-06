@@ -43,3 +43,25 @@ exports.login = async ({ username, password }) => {
 
   return token;
 };
+
+exports.verifyToken = async (token) => {
+  try {
+    // Verifikasi token menggunakan JWT_SECRET
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Cari user berdasarkan payload id
+    const user = await User.findByPk(payload.id);
+
+    if (!user) {
+      throw createError(404, "User not found");
+    }
+
+    // Berhasil: kembalikan info user
+    return {
+      id: user.id,
+      username: user.username,
+    };
+  } catch (err) {
+    throw createError(401, "Unauthorized: Invalid or expired token");
+  }
+};
