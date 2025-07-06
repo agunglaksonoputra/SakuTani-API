@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { ProfitShare, Owner, MonthlyReport } = require("../models");
+const { ProfitShare, Owner, MonthlyReport, UserBalance, UserBalanceLog } = require("../models");
 
 module.exports.getAll = async () => {
   await ProfitShare.findAll({ order: [["date", "DESC"]] });
@@ -54,6 +54,30 @@ module.exports.generateByMonth = async (date) => {
       record.amount = shareAmount;
       await record.save();
     }
+
+    // Tambahkan ke saldo user
+    const balance = await UserBalance.findOrCreate({
+      where: { owner_id: owner.id },
+      defaults: { balance: 0 },
+    });
+    const userBalance = Array.isArray(balance) ? balance[0] : balance;
+
+    const balanceBefore = parseFloat(userBalance.balance);
+    const balanceAfter = balanceBefore + shareAmount;
+
+    userBalance.balance = balanceAfter;
+    await userBalance.save();
+
+    // Catat ke user balance log
+    await UserBalanceLog.create({
+      owner_id: owner.id,
+      reference_type: "share_profit",
+      reference_id: record.id,
+      amount: shareAmount,
+      balance_before: balanceBefore,
+      balance_after: balanceAfter,
+      date: formattedDate,
+    });
 
     results.push(record);
   }
