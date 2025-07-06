@@ -8,16 +8,22 @@ const ownerRoute = require("./owner.routes");
 const profitShareRoute = require("./profit-share.routes");
 const userBalanceRoute = require("./user-balance.routes");
 const withdrawLogRoute = require("./withdraw-log.routes");
+const authRoutes = require("./auth.routes");
 // const userRoute = require("./user.route");
 // const ownerRoute = require("./owner.route");
 
+// Middleware Auth
+const auth = require("../middlewares/auth.middleware");
+
 // Daftarkan dengan prefix masing-masing
-router.use("/excel", excelRoute);
-router.use("/report", monthlyReportRoute);
-router.use("/owner", ownerRoute);
-router.use("/profit-share", profitShareRoute);
-router.use("/user-balance", userBalanceRoute);
-router.use("/withdraw-logs", withdrawLogRoute);
+router.use("/auth", authRoutes);
+
+router.use("/excel", auth, excelRoute);
+router.use("/report", auth, monthlyReportRoute);
+router.use("/owner", auth, ownerRoute);
+router.use("/profit-share", auth, profitShareRoute);
+router.use("/user-balance", auth, userBalanceRoute);
+router.use("/withdraw-logs", auth, withdrawLogRoute);
 // router.use("/users", userRoute);
 // router.use("/owners", ownerRoute);
 
