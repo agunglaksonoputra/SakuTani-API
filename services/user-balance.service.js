@@ -58,3 +58,8 @@ module.exports.generateAll = async () => {
 
   return { success: true, message: "User balances generated successfully" };
 };
+
+module.exports.getTotalUserBalance = async () => {
+  const total = await UserBalance.sum("balance");
+  return total || 0;
+};
