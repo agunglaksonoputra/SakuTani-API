@@ -26,5 +26,12 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
     }
   );
+
+  Owner.associate = (models) => {
+    Owner.hasOne(models.UserBalance, {
+      foreignKey: "owner_id",
+    });
+  };
+
   return Owner;
 };

@@ -28,5 +28,12 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
     }
   );
+
+  UserBalance.associate = (models) => {
+    UserBalance.belongsTo(models.Owner, {
+      foreignKey: "owner_id",
+    });
+  };
+
   return UserBalance;
 };

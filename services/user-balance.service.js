@@ -1,7 +1,24 @@
 const { ProfitShare, WithdrawLog, UserBalance, Owner } = require("../models");
+const { update } = require("./profit-share.service");
 
 module.exports.getAll = async () => {
-  return await UserBalance.findAll();
+  const results = await UserBalance.findAll({
+    attributes: ["balance"],
+    include: [
+      {
+        model: Owner,
+        attributes: ["name"],
+      },
+    ],
+    raw: true,
+    nest: true,
+  });
+
+  // Ratakan hasil
+  return results.map((item) => ({
+    name: item.Owner.name,
+    balance: item.balance,
+  }));
 };
 
 module.exports.getByOwner = async (ownerId) => {
