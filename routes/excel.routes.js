@@ -8,5 +8,6 @@ const excelController = require("../controllers/excel.controller");
 // });
 router.post("/import-sales", upload.single("SakuTani"), excelController.importSales);
 router.post("/import-expenses", upload.single("SakuTani"), excelController.importExpenses);
+router.get("/export", upload.single("SakuTani"), excelController.exportFullReport);
 
 module.exports = router;

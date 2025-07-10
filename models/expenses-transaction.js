@@ -55,5 +55,10 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
     }
   );
+
+  ExpensesTransaction.associate = (models) => {
+    ExpensesTransaction.belongsTo(models.MasterUnit, { as: "unit", foreignKey: "unit_id" });
+  };
+
   return ExpensesTransaction;
 };

@@ -32,5 +32,13 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
     }
   );
+
+  WithdrawLog.associate = (models) => {
+    WithdrawLog.belongsTo(models.Owner, {
+      foreignKey: "owner_id",
+      as: "owner",
+    });
+  };
+
   return WithdrawLog;
 };

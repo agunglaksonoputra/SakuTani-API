@@ -20,7 +20,7 @@ module.exports = {
         allowNull: false,
       },
       reference_type: {
-        type: Sequelize.ENUM("withdraw", "share_profit", "manual_adjustment"),
+        type: Sequelize.ENUM("withdraw", "share_profit", "refund_share_profit"),
         allowNull: true,
       },
       reference_id: {

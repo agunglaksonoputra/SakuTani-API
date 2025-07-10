@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       reference_type: {
-        type: DataTypes.ENUM("withdraw", "share_profit", "manual_adjustment"),
+        type: DataTypes.ENUM("withdraw", "share_profit", "refund_share_profit"),
         allowNull: true,
       },
       reference_id: {

@@ -18,6 +18,21 @@ module.exports.getAll = async (req, res) => {
   }
 };
 
+module.exports.getAllWithoutDelete = async (req, res) => {
+  try {
+    const { page, limit, startDate, endDate } = req.query;
+    const data = await withdrawLogService.getAllWithoutDelete({
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 10,
+      startDate,
+      endDate,
+    });
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 module.exports.getById = async (req, res) => {
   try {
     const data = await withdrawLogService.getById(req.params.id);

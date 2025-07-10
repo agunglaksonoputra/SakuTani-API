@@ -69,5 +69,21 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
     }
   );
+
+  SalesTransaction.associate = (models) => {
+    SalesTransaction.belongsTo(models.MasterCustomer, {
+      foreignKey: "customer_id",
+      as: "customer",
+    });
+    SalesTransaction.belongsTo(models.MasterVegetable, {
+      foreignKey: "vegetable_id",
+      as: "vegetable",
+    });
+    SalesTransaction.belongsTo(models.MasterUnit, {
+      foreignKey: "unit_id",
+      as: "unit",
+    });
+  };
+
   return SalesTransaction;
 };

@@ -9,7 +9,10 @@ const ownerRoute = require("./owner.routes");
 const profitShareRoute = require("./profit-share.routes");
 const userBalanceRoute = require("./user-balance.routes");
 const withdrawLogRoute = require("./withdraw-log.routes");
-const transactionsRoutes = require("./transaction.routes");
+const transactionsRoutes = require("./weekly-summary.routes");
+const salesTransactionRoutes = require("./sales-transaction.routes");
+const expensesTransactionRoutes = require("./expenses-transaction.routes");
+const dataMasterRoutes = require("./data-master.routes");
 // const userRoute = require("./user.route");
 // const ownerRoute = require("./owner.route");
 
@@ -24,8 +27,11 @@ router.use("/report", auth, monthlyReportRoute);
 router.use("/owner", auth, ownerRoute);
 router.use("/profit-share", auth, profitShareRoute);
 router.use("/user-balance", auth, userBalanceRoute);
-router.use("/withdraw-logs", auth, withdrawLogRoute);
+router.use("/withdraw", auth, withdrawLogRoute);
 router.use("/transactions", auth, transactionsRoutes);
+router.use("/sales", auth, salesTransactionRoutes);
+router.use("/expenses", auth, expensesTransactionRoutes);
+router.use("/data-master", auth, dataMasterRoutes);
 // router.use("/users", userRoute);
 // router.use("/owners", ownerRoute);
 

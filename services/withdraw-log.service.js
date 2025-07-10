@@ -1,39 +1,92 @@
-const { WithdrawLog, UserBalance, UserBalanceLog } = require("../models");
+const dayjs = require("dayjs");
+const { Op, col } = require("sequelize");
+const logger = require("../utils/logger");
+const { WithdrawLog, UserBalance, UserBalanceLog, Owner } = require("../models");
 
-module.exports.create = async ({ owner_id, amount, date }) => {
-  const balance = await UserBalance.findOne({ where: { owner_id } });
-  if (!balance) throw new Error("User balance not found");
+module.exports.create = async (data) => {
+  try {
+    const { name, amount, date } = data;
 
-  const currentBalance = parseFloat(balance.balance);
-  const withdrawAmount = parseFloat(amount);
+    const owner = await Owner.findOne({ where: { name } });
+    if (!owner) throw new Error("Owner not found");
 
-  if (withdrawAmount > currentBalance) {
-    throw new Error("Insufficient balance");
+    const balance = await UserBalance.findOne({ where: { owner_id: owner.id } });
+    if (!balance) throw new Error("User balance not found");
+
+    const withdrawAmount = parseFloat(amount);
+    const currentBalance = parseFloat(balance.balance);
+
+    if (withdrawAmount > currentBalance) {
+      throw new Error("Insufficient balance");
+    }
+
+    const dateToUse = date ? new Date(date) : dayjs().toDate();
+
+    const log = await WithdrawLog.create({
+      owner_id: owner.id,
+      amount: withdrawAmount,
+      date: dateToUse,
+    });
+
+    const newBalance = currentBalance - withdrawAmount;
+    balance.balance = newBalance;
+    await balance.save();
+
+    await UserBalanceLog.create({
+      owner_id: owner.id,
+      reference_type: "withdraw",
+      reference_id: log.id,
+      amount: -withdrawAmount,
+      balance_before: currentBalance,
+      balance_after: newBalance,
+      date: dateToUse,
+    });
+
+    logger.info(`Withdraw success: ${name} withdrew ${withdrawAmount}`);
+    return log;
+  } catch (err) {
+    logger.error(`Withdraw create error: ${err.message}`);
+    throw new Error("Withdraw process failed");
   }
-
-  // Simpan log withdraw
-  const log = await WithdrawLog.create({ owner_id, amount: withdrawAmount, date });
-
-  // Kurangi saldo user
-  const newBalance = currentBalance - withdrawAmount;
-  balance.balance = newBalance;
-  await balance.save();
-
-  await UserBalanceLog.create({
-    owner_id,
-    reference_type: "withdraw",
-    reference_id: log.id,
-    amount: -withdrawAmount,
-    balance_before: currentBalance,
-    balance_after: newBalance,
-    date,
-  });
-
-  return log;
 };
 
 module.exports.getAll = async () => {
   return await WithdrawLog.findAll();
+};
+
+module.exports.getAllWithoutDelete = async ({ page = 1, limit = 10, startDate, endDate }) => {
+  page = parseInt(page);
+  limit = parseInt(limit);
+
+  const offset = (page - 1) * limit;
+  const where = { deletedAt: null };
+
+  if (startDate && endDate) {
+    where.date = { [Op.between]: [startDate, endDate] };
+  } else if (startDate) {
+    where.date = { [Op.gte]: startDate };
+  } else if (endDate) {
+    where.date = { [Op.lte]: endDate };
+  }
+
+  return await WithdrawLog.findAll({
+    where,
+    include: [
+      {
+        model: Owner,
+        as: "owner",
+        attributes: [],
+      },
+    ],
+    attributes: ["id", [col("owner.name"), "name"], "amount", "date", "createdAt", "updatedAt", "deletedAt"],
+    order: [
+      ["date", "DESC"],
+      ["createdAt", "DESC"],
+    ],
+    limit,
+    offset,
+    raw: true,
+  });
 };
 
 module.exports.getById = async (id) => {
@@ -43,73 +96,80 @@ module.exports.getById = async (id) => {
 };
 
 module.exports.update = async (id, { amount, date }) => {
-  const log = await WithdrawLog.findByPk(id);
-  if (!log) throw new Error("Withdraw log not found");
+  try {
+    const log = await WithdrawLog.findByPk(id);
+    if (!log) throw new Error("Withdraw log not found");
 
-  const balance = await UserBalance.findOne({ where: { owner_id: log.owner_id } });
-  if (!balance) throw new Error("User balance not found");
+    const balance = await UserBalance.findOne({ where: { owner_id: log.owner_id } });
+    if (!balance) throw new Error("User balance not found");
 
-  const previousAmount = parseFloat(log.amount);
-  const newAmount = parseFloat(amount);
+    const previousAmount = parseFloat(log.amount);
+    const newAmount = parseFloat(amount);
+    const difference = newAmount - previousAmount;
 
-  // Hitung selisih perubahan
-  const difference = newAmount - previousAmount;
+    const beforeBalance = parseFloat(balance.balance);
 
-  if (difference > 0 && parseFloat(balance.balance) < difference) {
-    throw new Error("Insufficient balance for update");
+    if (difference > 0 && beforeBalance < difference) {
+      throw new Error("Insufficient balance for update");
+    }
+
+    const afterBalance = beforeBalance - difference;
+    balance.balance = afterBalance;
+    await balance.save();
+
+    log.amount = newAmount;
+    log.date = date;
+    await log.save();
+
+    await UserBalanceLog.create({
+      owner_id: log.owner_id,
+      reference_type: "withdraw",
+      reference_id: log.id,
+      amount: -difference,
+      balance_before: beforeBalance,
+      balance_after: afterBalance,
+      date,
+    });
+
+    logger.info(`Withdraw updated for ID ${id}, amount changed by ${difference}`);
+    return log;
+  } catch (err) {
+    logger.error(`Withdraw update error (ID ${id}): ${err.message}`);
+    throw new Error("Withdraw update failed");
   }
-
-  const beforeBalance = parseFloat(balance.balance);
-  const afterBalance = beforeBalance - difference;
-
-  // Update saldo berdasarkan selisih
-  balance.balance = afterBalance;
-  await balance.save();
-
-  // Update log
-  log.amount = newAmount;
-  log.date = date;
-  await log.save();
-
-  // Tambahkan log saldo perubahan withdraw
-  await UserBalanceLog.create({
-    owner_id: log.owner_id,
-    reference_type: "withdraw",
-    reference_id: log.id,
-    amount: -difference,
-    balance_before: beforeBalance,
-    balance_after: afterBalance,
-    date,
-  });
-
-  return log;
 };
 
 module.exports.delete = async (id) => {
-  const log = await WithdrawLog.findByPk(id);
-  if (!log) throw new Error("Withdraw log not found");
+  try {
+    const log = await WithdrawLog.findByPk(id);
+    if (!log) throw new Error("Withdraw log not found");
 
-  const balance = await UserBalance.findOne({ where: { owner_id: log.owner_id } });
-  if (!balance) throw new Error("User balance not found");
+    const balance = await UserBalance.findOne({ where: { owner_id: log.owner_id } });
+    if (!balance) throw new Error("User balance not found");
 
-  const beforeBalance = parseFloat(balance.balance);
-  const afterBalance = beforeBalance + parseFloat(log.amount);
+    const beforeBalance = parseFloat(balance.balance);
+    const restoredAmount = parseFloat(log.amount);
+    const afterBalance = beforeBalance + restoredAmount;
 
-  // Kembalikan jumlah yang diwithdraw ke saldo
-  balance.balance = afterBalance;
-  await balance.save();
+    balance.balance = afterBalance;
+    await balance.save();
 
-  // Simpan log pengembalian saldo karena delete
-  await UserBalanceLog.create({
-    owner_id: log.owner_id,
-    reference_type: "withdraw",
-    reference_id: log.id,
-    amount: parseFloat(log.amount),
-    balance_before: beforeBalance,
-    balance_after: afterBalance,
-    date: log.date,
-  });
+    await UserBalanceLog.create({
+      owner_id: log.owner_id,
+      reference_type: "withdraw",
+      reference_id: log.id,
+      amount: restoredAmount,
+      balance_before: beforeBalance,
+      balance_after: afterBalance,
+      date: log.date,
+    });
 
-  await log.destroy(); // soft delete
-  return { success: true, message: "Withdraw log deleted and balance restored" };
+    await log.destroy();
+
+    logger.info(`Withdraw deleted: ID ${id}, restored amount ${restoredAmount}`);
+    return { success: true, message: "Withdraw log deleted and balance restored" };
+  } catch (err) {
+    logger.error(`Withdraw delete error (ID ${id}): ${err.message}`);
+    throw new Error("Withdraw delete failed");
+  }
 };
