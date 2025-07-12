@@ -1,6 +1,6 @@
 const dayjs = require("dayjs");
 const { Op, literal } = require("sequelize");
-const { MonthlyReport, SalesTransaction, ExpensesTransaction, MasterCustomer, MasterVegetable, MasterUnit, Owner } = require("../models");
+const { MonthlyReport, SalesTransaction, ExpensesTransaction, MasterCustomer, MasterVegetable, MasterUnit, Owner, User } = require("../models");
 const ProfitShareService = require("./profit-share.service");
 const UserBalanceService = require("./user-balance.service");
 
@@ -162,6 +162,7 @@ module.exports.getMonthlyReportDetailsById = async (id) => {
       { model: MasterCustomer, as: "customer", attributes: ["name"] },
       { model: MasterVegetable, as: "vegetable", attributes: ["name"] },
       { model: MasterUnit, as: "unit", attributes: ["name"] },
+      { model: User, as: "user", attributes: ["username"] },
     ],
     order: [["date", "DESC"]],
   });
@@ -179,6 +180,7 @@ module.exports.getMonthlyReportDetailsById = async (id) => {
     price_per_unit: tx.price_per_unit,
     total_price: tx.total_price,
     notes: tx.notes,
+    created_by: tx.user.username,
     createdAt: tx.createdAt,
     updatedAt: tx.updatedAt,
   }));
@@ -189,7 +191,10 @@ module.exports.getMonthlyReportDetailsById = async (id) => {
       date: { [Op.between]: [startDate, endDate] },
       deletedAt: null,
     },
-    include: [{ model: MasterUnit, as: "unit", attributes: ["name"] }],
+    include: [
+      { model: MasterUnit, as: "unit", attributes: ["name"] },
+      { model: User, as: "user", attributes: ["username"] },
+    ],
     order: [["date", "DESC"]],
   });
 
@@ -204,6 +209,7 @@ module.exports.getMonthlyReportDetailsById = async (id) => {
     discount: tx.discount,
     total_price: tx.total_price,
     notes: tx.notes,
+    created_by: tx.user.username,
     createdAt: tx.createdAt,
     updatedAt: tx.updatedAt,
   }));

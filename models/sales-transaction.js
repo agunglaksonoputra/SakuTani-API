@@ -62,6 +62,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         defaultValue: null,
       },
+      created_by: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: "user",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
+      },
     },
     {
       tableName: "sales_transactions",
@@ -82,6 +92,10 @@ module.exports = (sequelize, DataTypes) => {
     SalesTransaction.belongsTo(models.MasterUnit, {
       foreignKey: "unit_id",
       as: "unit",
+    });
+    SalesTransaction.belongsTo(models.User, {
+      foreignKey: "created_by",
+      as: "user",
     });
   };
 

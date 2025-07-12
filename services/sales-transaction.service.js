@@ -1,6 +1,7 @@
 const dayjs = require("dayjs");
-const { Op } = require("sequelize");
-const { SalesTransaction, MasterCustomer, MasterVegetable, MasterUnit } = require("../models");
+const { Op, fn, col, literal } = require("sequelize");
+const moment = require("moment");
+const { SalesTransaction, MasterCustomer, MasterVegetable, MasterUnit, User } = require("../models");
 const monthlyReportService = require("./monthly-report.service");
 const profitShareReport = require("./profit-share.service");
 
@@ -16,10 +17,10 @@ async function findOrCreateByName(Model, name) {
   return record;
 }
 
-module.exports.findOrCreateByName = async (data) => {
-  const { customer, item_name, unit, quantity, weight_per_unit_gram, total_weight_kg, price_per_unit, total_price, notes } = data;
+module.exports.findOrCreateByName = async (data, created_by) => {
+  const { date, customer, item_name, unit, quantity, weight_per_unit_gram, total_weight_kg, price_per_unit, total_price, notes } = data;
 
-  const date = dayjs().format("YYYY-MM-DD");
+  const dateResult = date && date.trim() !== "" ? date : dayjs().format("YYYY-MM-DD");
 
   const normalizedVegetableName = item_name?.toLowerCase().trim();
   const normalizedUnitName = unit?.toLowerCase().trim();
@@ -29,7 +30,7 @@ module.exports.findOrCreateByName = async (data) => {
   const unitRecord = await findOrCreateByName(MasterUnit, normalizedUnitName);
 
   const transaction = await SalesTransaction.create({
-    date,
+    date: dateResult,
     customer_id: customerRecord.id,
     vegetable_id: vegetableRecord.id,
     unit_id: unitRecord.id,
@@ -39,6 +40,7 @@ module.exports.findOrCreateByName = async (data) => {
     price_per_unit,
     total_price,
     notes,
+    created_by,
   });
 
   await monthlyReportService.updateMonthReport(transaction.date);
@@ -77,6 +79,7 @@ module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate }) => 
       { model: MasterCustomer, as: "customer", attributes: ["name"] },
       { model: MasterVegetable, as: "vegetable", attributes: ["name"] },
       { model: MasterUnit, as: "unit", attributes: ["name"] },
+      { model: User, as: "user", attributes: ["username"] },
     ],
   });
 
@@ -93,18 +96,31 @@ module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate }) => 
     price_per_unit: tx.price_per_unit,
     total_price: tx.total_price,
     notes: tx.notes,
+    created_by: tx.user?.username || null,
     createdAt: tx.createdAt,
     updatedAt: tx.updatedAt,
   }));
 
-  const totalPrice = rows.reduce((acc, tx) => acc + parseFloat(tx.total_price || 0), 0);
-  const totalWeightKg = rows.reduce((acc, tx) => acc + parseFloat(tx.total_weight_kg || 0), 0);
+  const startOfMonth = moment().startOf("month").format("YYYY-MM-DD");
+  const endOfMonth = moment().endOf("month").format("YYYY-MM-DD");
+
+  const totalCurrentMonth = await SalesTransaction.findOne({
+    where: {
+      deletedAt: null,
+      date: { [Op.between]: [startOfMonth, endOfMonth] },
+    },
+    attributes: [
+      [fn("SUM", col("total_price")), "totalPrice"],
+      [fn("SUM", col("total_weight_kg")), "totalWeightKg"],
+    ],
+    raw: true,
+  });
 
   return {
     page,
     limit,
-    totalPrice,
-    totalWeightKg,
+    totalPrice: parseFloat(totalCurrentMonth.totalPrice || 0),
+    totalWeightKg: parseFloat(totalCurrentMonth.totalWeightKg || 0),
     total: count,
     data: sales,
   };

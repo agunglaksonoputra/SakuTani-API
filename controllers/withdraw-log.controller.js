@@ -2,10 +2,13 @@ const withdrawLogService = require("../services/withdraw-log.service");
 
 module.exports.create = async (req, res) => {
   try {
-    const data = await withdrawLogService.create(req.body);
-    res.status(201).json({ success: true, data });
+    const log = await withdrawLogService.create(req.body, req.user.id);
+    res.status(201).json({
+      message: "Withdraw berhasil",
+      data: log.get({ plain: true }), // ✅ hindari circular reference
+    });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 

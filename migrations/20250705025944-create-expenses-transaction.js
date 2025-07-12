@@ -50,6 +50,16 @@ module.exports = {
         type: Sequelize.TEXT,
         defaultValue: null,
       },
+      created_by: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "users",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

@@ -22,12 +22,12 @@ const auth = require("../middlewares/auth.middleware");
 // Daftarkan dengan prefix masing-masing
 router.use("/auth", authRoutes);
 
-router.use("/excel", auth, excelRoute);
+router.use("/excel", excelRoute);
 router.use("/report", auth, monthlyReportRoute);
 router.use("/owner", auth, ownerRoute);
 router.use("/profit-share", auth, profitShareRoute);
 router.use("/user-balance", auth, userBalanceRoute);
-router.use("/withdraw", auth, withdrawLogRoute);
+router.use("/withdraw", withdrawLogRoute);
 router.use("/transactions", auth, transactionsRoutes);
 router.use("/sales", auth, salesTransactionRoutes);
 router.use("/expenses", auth, expensesTransactionRoutes);

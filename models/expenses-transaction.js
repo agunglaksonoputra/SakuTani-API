@@ -48,6 +48,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         defaultValue: null,
       },
+      created_by: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: "user",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
+      },
     },
     {
       tableName: "expenses_transactions",
@@ -58,6 +68,7 @@ module.exports = (sequelize, DataTypes) => {
 
   ExpensesTransaction.associate = (models) => {
     ExpensesTransaction.belongsTo(models.MasterUnit, { as: "unit", foreignKey: "unit_id" });
+    ExpensesTransaction.belongsTo(models.User, { as: "user", foreignKey: "created_by" });
   };
 
   return ExpensesTransaction;

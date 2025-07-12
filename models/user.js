@@ -15,6 +15,17 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
+      role_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 3,
+        references: {
+          model: "Roles",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "RESTRICT",
+      },
     },
     {
       tableName: "users",
@@ -22,6 +33,13 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
     }
   );
+
+  User.associate = (models) => {
+    User.belongsTo(models.Role, {
+      foreignKey: "role_id",
+      as: "role",
+    });
+  };
 
   return User;
 };

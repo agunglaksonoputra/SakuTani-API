@@ -2,21 +2,14 @@ const saleTransactionservice = require("../services/sales-transaction.service");
 
 exports.create = async (req, res) => {
   try {
-    const data = await saleTransactionservice.findOrCreateByName(req.body);
+    const created_id = req.user.id;
+
+    const data = await saleTransactionservice.findOrCreateByName(req.body, created_id);
     res.status(201).json({ success: true, data });
   } catch (e) {
     res.status(400).json({ success: false, message: e.message });
   }
 };
-
-// exports.create = async (req, res) => {
-//   try {
-//     const data = await saleTransactionservice.findOrCreateByName(req.body);
-//     res.status(201).json({ success: true, data });
-//   } catch (e) {
-//     res.status(400).json({ success: false, message: e.message });
-//   }
-// };
 
 exports.getAll = async (req, res) => {
   try {

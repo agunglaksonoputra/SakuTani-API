@@ -1,5 +1,6 @@
 const dayjs = require("dayjs");
-const { Op } = require("sequelize");
+const { Op, fn, col } = require("sequelize");
+const moment = require("moment");
 const { ExpensesTransaction, MasterUnit } = require("../models");
 const monthlyReportService = require("./monthly-report.service");
 const profitShareReport = require("./profit-share.service");
@@ -13,14 +14,14 @@ async function findOrCreateUnitByName(name) {
   return unit;
 }
 
-module.exports.create = async (data) => {
-  const { name, quantity, unit, price_per_unit, shipping_cost = 0, discount = 0, total_price, notes } = data;
+module.exports.create = async (data, created_by) => {
+  const { date, name, quantity, unit, price_per_unit, shipping_cost = 0, discount = 0, total_price, notes } = data;
 
-  const date = dayjs().format("YYYY-MM-DD");
+  const dateResult = date && date.trim() !== "" ? date : dayjs().format("YYYY-MM-DD");
   const unitRecord = await findOrCreateUnitByName(unit);
 
   const transaction = await ExpensesTransaction.create({
-    date,
+    date: dateResult,
     name,
     quantity,
     unit_id: unitRecord.id,
@@ -29,6 +30,7 @@ module.exports.create = async (data) => {
     discount,
     total_price,
     notes,
+    created_by,
   });
 
   // Generate atau update laporan bulanan setelah transaksi dibuat
@@ -82,13 +84,23 @@ module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate }) => 
     updatedAt: tx.updatedAt,
   }));
 
-  const totalPrice = rows.reduce((acc, tx) => acc + parseFloat(tx.total_price || 0), 0);
+  const startOfMonth = moment().startOf("month").format("YYYY-MM-DD");
+  const endOfMonth = moment().endOf("month").format("YYYY-MM-DD");
+
+  const totalCurrentMonth = await ExpensesTransaction.findOne({
+    where: {
+      deletedAt: null,
+      date: { [Op.between]: [startOfMonth, endOfMonth] },
+    },
+    attributes: [[fn("SUM", col("total_price")), "totalPrice"]],
+    raw: true,
+  });
 
   return {
     page,
     limit,
     total: count,
-    totalPrice,
+    totalPrice: parseFloat(totalCurrentMonth.totalPrice || 0),
     data: expenses,
   };
 };

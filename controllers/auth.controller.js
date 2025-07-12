@@ -13,9 +13,8 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    console.log("Login Dipanggil");
-    const token = await authService.login(req.body);
-    res.json({ success: true, token });
+    const { token, user } = await authService.login(req.body);
+    res.json({ success: true, token, user });
   } catch (err) {
     res.status(401).json({ success: false, error: err.message });
   }

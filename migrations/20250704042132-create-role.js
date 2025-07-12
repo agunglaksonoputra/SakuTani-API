@@ -1,8 +1,9 @@
 "use strict";
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("owners", {
+    await queryInterface.createTable("roles", {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -10,17 +11,9 @@ module.exports = {
         type: Sequelize.INTEGER,
       },
       name: {
-        type: Sequelize.STRING(100),
+        type: Sequelize.STRING(30),
+        unique: true,
         allowNull: false,
-      },
-      share_percentage: {
-        type: Sequelize.DECIMAL,
-        allowNull: false,
-      },
-      is_active: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
-        defaultValue: true,
       },
       createdAt: {
         allowNull: false,
@@ -33,17 +26,19 @@ module.exports = {
         defaultValue: Sequelize.fn("NOW"),
       },
       deletedAt: {
-        type: Sequelize.DATE,
         allowNull: true,
+        type: Sequelize.DATE,
       },
     });
-    await queryInterface.bulkInsert("owners", [
-      { name: "Zakat", share_percentage: 10, is_active: true },
-      { name: "Joko", share_percentage: 45, is_active: true },
-      { name: "Pardi", share_percentage: 45, is_active: true },
+
+    await queryInterface.bulkInsert("roles", [
+      { name: "admin", createdAt: new Date(), updatedAt: new Date() },
+      { name: "operator", createdAt: new Date(), updatedAt: new Date() },
+      { name: "viewer", createdAt: new Date(), updatedAt: new Date() },
     ]);
   },
+
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("owners");
+    await queryInterface.dropTable("roles");
   },
 };

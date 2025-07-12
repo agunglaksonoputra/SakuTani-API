@@ -1,17 +1,31 @@
 const jwt = require("jsonwebtoken");
+const createError = require("http-errors");
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers["authorization"];
 
-  if (!authHeader) return res.status(403).json({ message: "No token provided" });
+  // Tidak ada Authorization header
+  if (!authHeader) {
+    return next(createError(401, "Authorization header missing"));
+  }
 
-  const token = authHeader.split(" ")[1]; // Ambil hanya token setelah 'Bearer'
+  const [scheme, token] = authHeader.split(" ");
+
+  // Format harus "Bearer <token>"
+  if (scheme !== "Bearer" || !token) {
+    return next(createError(400, "Invalid token format. Expected 'Bearer <token>'"));
+  }
 
   try {
+    // Verifikasi token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+
+    console.log("✅ JWT Verified:");
+    console.log("Payload:", decoded);
+
+    req.user = decoded; // Simpan payload JWT ke req.user
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid token" });
+    return next(createError(401, "Invalid or expired token"));
   }
 };

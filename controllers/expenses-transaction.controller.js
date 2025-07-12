@@ -3,8 +3,8 @@ const expensesTransactionService = require("../services/expenses-transaction.ser
 module.exports = {
   async create(req, res) {
     try {
-      const data = req.body;
-      const transaction = await expensesTransactionService.create(data);
+      const created_id = req.user.id;
+      const transaction = await expensesTransactionService.create(req.body, created_id);
       res.status(201).json({ success: true, data: transaction });
     } catch (error) {
       console.error("Create Error:", error);

@@ -12,6 +12,7 @@ const Vegetable = db.MasterVegetable;
 const Unit = db.MasterUnit;
 const WithdrawLog = db.WithdrawLog;
 const Owner = db.Owner;
+const Role = db.Role;
 
 const getCellValue = (cell) => (typeof cell === "object" && cell?.result !== undefined ? cell.result : cell);
 
@@ -87,6 +88,10 @@ exports.importSales = async (req, res) => {
       const date = dayjs(dateRaw).format("YYYY-MM-DD");
       updatedMonths.add(dayjs(date).startOf("month").format("YYYY-MM-DD"));
 
+      const userId = await Role.findOne({
+        where: { name: req.user.role },
+      });
+
       rows.push({
         date,
         customer_id: customer.id,
@@ -98,6 +103,7 @@ exports.importSales = async (req, res) => {
         price_per_unit: pricePerUnit || 0,
         total_price: totalPrice,
         notes: notes || null,
+        created_by: userId.id,
       });
     }
 
@@ -185,6 +191,10 @@ exports.importExpenses = async (req, res) => {
       const date = dayjs(dateRaw).format("YYYY-MM-DD");
       updatedMonths.add(dayjs(date).startOf("month").format("YYYY-MM-DD"));
 
+      const userId = await Role.findOne({
+        where: { name: req.user.role },
+      });
+
       rows.push({
         date,
         name: itemName,
@@ -195,6 +205,7 @@ exports.importExpenses = async (req, res) => {
         discount: discount,
         total_price: totalPrice,
         notes: notes || null,
+        created_by: userId.id,
       });
     }
 
@@ -560,13 +571,20 @@ exports.exportFullReport = async (req, res) => {
 
     // Styling untuk header
     [1, 2].forEach((rowNum) => {
-      financeSheet.getRow(rowNum).eachCell((cell) => {
+      financeSheet.getRow(rowNum).eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        // Tentukan warna berdasarkan kolom
+        let fillColor = "FFD9D9D9"; // default abu-abu muda
+
+        if (colNumber >= 9 && colNumber <= 11) {
+          fillColor = "FFC6E0B4"; // hijau muda (ganti kode ini jika ingin warna lain)
+        }
+
         cell.alignment = { horizontal: "center", vertical: "middle" };
         cell.font = { bold: true };
         cell.fill = {
           type: "pattern",
           pattern: "solid",
-          fgColor: { argb: "FFD9D9D9" }, // abu-abu muda
+          fgColor: { argb: fillColor },
         };
         cell.border = {
           top: { style: "thin" },

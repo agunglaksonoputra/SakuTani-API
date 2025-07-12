@@ -1,15 +1,17 @@
 const dayjs = require("dayjs");
 const { Op, col } = require("sequelize");
 const logger = require("../utils/logger");
-const { WithdrawLog, UserBalance, UserBalanceLog, Owner } = require("../models");
+const { WithdrawLog, UserBalance, UserBalanceLog, Owner, User } = require("../models");
 
-module.exports.create = async (data) => {
+module.exports.create = async (data, created_by) => {
   try {
     const { name, amount, date } = data;
 
+    // Validasi owner
     const owner = await Owner.findOne({ where: { name } });
     if (!owner) throw new Error("Owner not found");
 
+    // Validasi saldo
     const balance = await UserBalance.findOne({ where: { owner_id: owner.id } });
     if (!balance) throw new Error("User balance not found");
 
@@ -20,18 +22,26 @@ module.exports.create = async (data) => {
       throw new Error("Insufficient balance");
     }
 
-    const dateToUse = date ? new Date(date) : dayjs().toDate();
+    const dateResult = date && date.trim() !== "" ? date : dayjs().format("YYYY-MM-DD");
 
+    // Validasi user ID (opsional, tapi aman)
+    const user = await User.findByPk(created_by);
+    if (!user) throw new Error("User (created_by) not found");
+
+    // Simpan ke WithdrawLog
     const log = await WithdrawLog.create({
       owner_id: owner.id,
       amount: withdrawAmount,
-      date: dateToUse,
+      date: dateResult,
+      created_by: created_by,
     });
 
+    // Update saldo
     const newBalance = currentBalance - withdrawAmount;
     balance.balance = newBalance;
     await balance.save();
 
+    // Simpan ke UserBalanceLog
     await UserBalanceLog.create({
       owner_id: owner.id,
       reference_type: "withdraw",
@@ -40,6 +50,7 @@ module.exports.create = async (data) => {
       balance_before: currentBalance,
       balance_after: newBalance,
       date: dateToUse,
+      created_by: created_by,
     });
 
     logger.info(`Withdraw success: ${name} withdrew ${withdrawAmount}`);
