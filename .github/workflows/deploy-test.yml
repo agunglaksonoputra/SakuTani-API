@@ -21,7 +21,7 @@ jobs:
             set -e
 
             PROJECT_DIR="/home/${{ secrets.VPS_USER }}/projects/saku-tani-api"
-            REPO_URL="git@github.com:agunglaksonoputra/SakuTani-API.git"
+            REPO_URL="https://github.com/agunglaksonoputra/SakuTani-API.git"
 
             echo "📁 Cek direktori proyek..."
             if [ -d "$PROJECT_DIR" ]; then
