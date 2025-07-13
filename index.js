@@ -16,13 +16,13 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", async () => {
   try {
     await db.sequelize.authenticate();
-    console.log("✅ Database connected!");
+    console.log("Database connected!");
 
     // Untuk sync model dengan tabel (opsional)
     // await db.sequelize.sync({ alter: true });
 
-    console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
+    console.log(`Server running at http://0.0.0.0:${PORT}`);
   } catch (error) {
-    console.error("❌ Unable to connect to the database:", error);
+    console.error("Unable to connect to the database:", error);
   }
 });
