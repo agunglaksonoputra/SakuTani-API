@@ -21,7 +21,7 @@ jobs:
             set -e
 
             PROJECT_DIR="/home/${{ secrets.VPS_USER }}/projects/saku-tani-api"
-            REPO_URL="https://github.com/agunglaksonoputra/SakuTani-API.git"
+            REPO_URL="git@github.com:agunglaksonoputra/SakuTani-API.git"
 
             echo "📁 Cek direktori proyek..."
             if [ -d "$PROJECT_DIR" ]; then
@@ -38,10 +38,10 @@ jobs:
 
             cd "$PROJECT_DIR"
 
-            echo "🔄 Checkout dan pull branch 'test'..."
+            echo "🔄 Checkout dan pull branch 'testing'..."
             git fetch origin
-            git checkout test || git checkout -b test origin/test
-            git pull origin test
+            git checkout testing || git checkout -b testing origin/testing
+            git pull origin testing
 
             echo "🐳 Build dan jalankan Docker Compose..."
             TAG=test ENV_FILE=.env.test PORT=${{ secrets.TEST_VPS_PORT }} docker compose up -d --build
