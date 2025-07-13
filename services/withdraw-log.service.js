@@ -49,7 +49,7 @@ module.exports.create = async (data, created_by) => {
       amount: -withdrawAmount,
       balance_before: currentBalance,
       balance_after: newBalance,
-      date: dateToUse,
+      date: dateResult,
       created_by: created_by,
     });
 
