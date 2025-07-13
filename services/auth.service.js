@@ -79,3 +79,48 @@ exports.verifyToken = async (token) => {
     throw createError(401, "Unauthorized: Invalid or expired token");
   }
 };
+
+exports.resetPassword = async ({ username, oldPassword, newPassword }) => {
+  const user = await User.findOne({ where: { username } });
+
+  if (!user) {
+    throw createError(404, "User not found");
+  }
+
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
+  if (!isMatch) {
+    throw createError(401, "Old password is incorrect");
+  }
+
+  if (!newPassword || newPassword.length < 6) {
+    throw createError(400, "New password must be at least 6 characters long");
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+
+  await user.update({ password: hashed });
+
+  return { message: "Password successfully updated" };
+};
+
+exports.changeUsername = async ({ currentUsername, newUsername }) => {
+  const user = await User.findOne({ where: { username: currentUsername } });
+
+  if (!user) {
+    throw createError(404, "User not found");
+  }
+
+  const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+  if (!usernameRegex.test(newUsername)) {
+    throw createError(400, "New username must be 3–20 characters, only letters, numbers, and underscores");
+  }
+
+  const existing = await User.findOne({ where: { username: newUsername } });
+  if (existing) {
+    throw createError(409, "Username is already taken");
+  }
+
+  await user.update({ username: newUsername });
+
+  return { message: "Username successfully updated", newUsername };
+};

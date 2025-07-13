@@ -37,3 +37,21 @@ exports.verifyToken = async (req, res) => {
     res.status(status).json({ success: false, error: err.message });
   }
 };
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const result = await authService.resetPassword(req.body);
+    res.json({ success: false, result });
+  } catch (err) {
+    res.status(401).json({ success: false, error: err.message });
+  }
+};
+
+exports.changeUsername = async (req, res) => {
+  try {
+    const result = await authService.changeUsername(req.body);
+    res.json({ success: false, result });
+  } catch (err) {
+    res.status(401).json({ success: false, error: err.message });
+  }
+};
