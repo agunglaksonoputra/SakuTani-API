@@ -18,6 +18,17 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            cd /home/${{ secrets.VPS_USER }}/projects/saku-tani-api
+            PROJECT_DIR="/home/${{ secrets.VPS_USER }}/projects/saku-tani-api"
+
+            # Cek apakah folder repo ada, kalau belum maka clone
+            if [ ! -d "$PROJECT_DIR/.git" ]; then
+              git clone git@github.com:username/repo-name.git "$PROJECT_DIR"
+            fi
+
+            cd "$PROJECT_DIR"
+            git fetch origin
+            git checkout test
             git pull origin test
-            TAG=test ENV_FILE=.env.test PORT=${{ secrets.TEST_VPS_PORT }} docker-compose up -d --build
+
+            # Jalankan docker compose (gunakan `docker compose` jika pakai plugin baru)
+            TAG=test ENV_FILE=.env.test PORT=${{ secrets.TEST_VPS_PORT }} docker compose up -d --build
