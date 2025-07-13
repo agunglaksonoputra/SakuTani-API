@@ -18,17 +18,32 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            PROJECT_DIR="/home/${{ secrets.VPS_USER }}/projects/saku-tani-api"
+            set -e
 
-            # Cek apakah folder repo ada, kalau belum maka clone
-            if [ ! -d "$PROJECT_DIR/.git" ]; then
-              git clone https://github.com/agunglaksonoputra/SakuTani-API.git "$PROJECT_DIR"
+            PROJECT_DIR="/home/${{ secrets.VPS_USER }}/projects/saku-tani-api"
+            REPO_URL="https://github.com/agunglaksonoputra/SakuTani-API.git"
+
+            echo "📁 Cek direktori proyek..."
+            if [ -d "$PROJECT_DIR" ]; then
+              if [ ! -d "$PROJECT_DIR/.git" ]; then
+                echo "⚠️ Folder sudah ada tapi bukan Git repo. Menghapusnya..."
+                rm -rf "$PROJECT_DIR"
+              fi
+            fi
+
+            if [ ! -d "$PROJECT_DIR" ]; then
+              echo "⬇️ Clone repository..."
+              git clone "$REPO_URL" "$PROJECT_DIR"
             fi
 
             cd "$PROJECT_DIR"
+
+            echo "🔄 Checkout dan pull branch 'test'..."
             git fetch origin
-            git checkout test
+            git checkout test || git checkout -b test origin/test
             git pull origin test
 
-            # Jalankan docker compose (gunakan `docker compose` jika pakai plugin baru)
+            echo "🐳 Build dan jalankan Docker Compose..."
             TAG=test ENV_FILE=.env.test PORT=${{ secrets.TEST_VPS_PORT }} docker compose up -d --build
+
+            echo "✅ Deploy selesai!"
