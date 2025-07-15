@@ -61,7 +61,7 @@ exports.login = async ({ username, password }) => {
   };
 
   const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "1d",
+    expiresIn: "30m",
   });
 
   return {
@@ -73,7 +73,6 @@ exports.login = async ({ username, password }) => {
 exports.verifyToken = async (token) => {
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    // Valid token; langsung gunakan isi payload
     return payload;
   } catch (err) {
     throw createError(401, "Unauthorized: Invalid or expired token");
