@@ -12,8 +12,9 @@ services:
       - ${ENV_FILE}
     restart: always
     networks:
-      - stagging-net
+      - app-net
 
 networks:
   stagging-net:
+    name: ${DOCKER_NETWORK}
     external: true
