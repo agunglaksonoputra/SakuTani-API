@@ -44,6 +44,7 @@ jobs:
             git pull origin main
 
             echo "🐳 Build dan jalankan Docker Compose (Production)..."
-            TAG=prod ENV_FILE=.env.prod PORT=${{ secrets.PROD_VPS_PORT }} docker compose up -d --build
+            TAG=prod ENV_FILE=.env.prod PORT=3000 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
 
             echo "✅ Deploy production selesai!"
