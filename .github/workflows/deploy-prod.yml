@@ -18,6 +18,32 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            cd /home/${{ secrets.VPS_USER }}/projects/saku-tani-api
+            set -e
+
+            PROJECT_DIR="/home/${{ secrets.VPS_USER }}/projects/production/saku-tani-api"
+            REPO_URL="https://github.com/agunglaksonoputra/SakuTani-API.git"
+
+            echo "📁 Cek direktori proyek..."
+            if [ -d "$PROJECT_DIR" ]; then
+              if [ ! -d "$PROJECT_DIR/.git" ]; then
+                echo "⚠️ Folder sudah ada tapi bukan Git repo. Menghapusnya..."
+                rm -rf "$PROJECT_DIR"
+              fi
+            fi
+
+            if [ ! -d "$PROJECT_DIR" ]; then
+              echo "⬇️ Clone repository..."
+              git clone "$REPO_URL" "$PROJECT_DIR"
+            fi
+
+            cd "$PROJECT_DIR"
+
+            echo "🔄 Checkout dan pull branch 'main'..."
+            git fetch origin
+            git checkout main || git checkout -b main origin/main
             git pull origin main
-            TAG=prod ENV_FILE=.env.prod PORT=${{ secrets.PROD_VPS_PORT }} docker-compose up -d --build
+
+            echo "🐳 Build dan jalankan Docker Compose (Production)..."
+            TAG=prod ENV_FILE=.env.prod PORT=${{ secrets.PROD_VPS_PORT }} docker compose up -d --build
+
+            echo "✅ Deploy production selesai!"
