@@ -20,6 +20,18 @@ async function findOrCreateByName(Model, name) {
 module.exports.findOrCreateByName = async (data, created_by) => {
   const { date, customer, item_name, unit, quantity, weight_per_unit_gram, total_weight_kg, price_per_unit, total_price, notes } = data;
 
+  if (!customer || customer.trim() === "") {
+    throw new Error("Customer tidak boleh kosong");
+  }
+
+  if (!item_name || item_name.trim() === "") {
+    throw new Error("Nama item tidak boleh kosong");
+  }
+
+  if (!unit || unit.trim() === "") {
+    throw new Error("Satuan tidak boleh kosong");
+  }
+
   const dateResult = date && date.trim() !== "" ? date : dayjs().format("YYYY-MM-DD");
 
   const normalizedVegetableName = item_name?.toLowerCase().trim();
@@ -48,16 +60,42 @@ module.exports.findOrCreateByName = async (data, created_by) => {
   return transaction;
 };
 
-module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate }) => {
-  // Parsing dan validasi
+module.exports.getAll = async ({ page = 1, limit = 10, customer = "", item_name = "", startDate = "", endDate = "", sort_by = "date", sort_order = "desc" }) => {
   page = parseInt(page);
   limit = parseInt(limit);
   if (isNaN(page) || page < 1) page = 1;
   if (isNaN(limit) || limit < 1) limit = 10;
-
   const offset = (page - 1) * limit;
 
-  const where = { deletedAt: null };
+  // === Cari customerId dari nama ===
+  let customerIdFilter = null;
+
+  if (customer) {
+    const foundCustomer = await MasterCustomer.findByPk(customer, {
+      attributes: ["id"],
+      raw: true,
+    });
+
+    customerIdFilter = foundCustomer ? foundCustomer.id : -1;
+  }
+
+  // === Cari vegetableId dari nama ===
+  let vegetableIdFilter = null;
+  if (item_name) {
+    const foundVegetable = await MasterVegetable.findOne({
+      where: { name: { [Op.iLike]: item_name } },
+      attributes: ["id"],
+      raw: true,
+    });
+    vegetableIdFilter = foundVegetable ? foundVegetable.id : -1;
+  }
+
+  // === WHERE utama ===
+  const where = {
+    deletedAt: null,
+    ...(customerIdFilter && { customer_id: customerIdFilter }),
+    ...(vegetableIdFilter && { vegetableId: vegetableIdFilter }),
+  };
 
   if (startDate && endDate) {
     where.date = { [Op.between]: [startDate, endDate] };
@@ -67,23 +105,42 @@ module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate }) => 
     where.date = { [Op.lte]: endDate };
   }
 
+  const include = [
+    {
+      model: MasterCustomer,
+      as: "customer",
+      attributes: ["name"],
+    },
+    {
+      model: MasterVegetable,
+      as: "vegetable",
+      attributes: ["name"],
+    },
+    {
+      model: MasterUnit,
+      as: "unit",
+      attributes: ["name"],
+    },
+    {
+      model: User,
+      as: "user",
+      attributes: ["username"],
+    },
+  ];
+
+  const order = [
+    [sort_by, sort_order.toUpperCase()],
+    ["createdAt", "DESC"],
+  ];
+
   const { count, rows } = await SalesTransaction.findAndCountAll({
     where,
+    include,
     offset,
     limit,
-    order: [
-      ["date", "DESC"],
-      ["createdAt", "DESC"],
-    ],
-    include: [
-      { model: MasterCustomer, as: "customer", attributes: ["name"] },
-      { model: MasterVegetable, as: "vegetable", attributes: ["name"] },
-      { model: MasterUnit, as: "unit", attributes: ["name"] },
-      { model: User, as: "user", attributes: ["username"] },
-    ],
+    order,
   });
 
-  // Mapping hasil agar name tampil langsung di level atas
   const sales = rows.map((tx) => ({
     id: tx.id,
     date: tx.date,
@@ -101,27 +158,61 @@ module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate }) => 
     updatedAt: tx.updatedAt,
   }));
 
-  const startOfMonth = moment().startOf("month").format("YYYY-MM-DD");
-  const endOfMonth = moment().endOf("month").format("YYYY-MM-DD");
+  const hasFilter = customer || item_name || startDate || endDate;
 
-  const totalCurrentMonth = await SalesTransaction.findOne({
-    where: {
-      deletedAt: null,
-      date: { [Op.between]: [startOfMonth, endOfMonth] },
-    },
+  // Konversi tanggal default jika tidak ada filter
+  let startSummary, endSummary;
+
+  if (!hasFilter) {
+    // Tanpa filter: default bulan ini
+    startSummary = moment().startOf("month").format("YYYY-MM-DD");
+    endSummary = moment().endOf("month").format("YYYY-MM-DD");
+  } else if (customer && !startDate && !endDate) {
+    // Filter hanya customer: semua data customer (tanpa batas tanggal)
+    startSummary = "2000-01-01"; // tanggal awal yang aman
+    endSummary = moment().endOf("day").format("YYYY-MM-DD"); // sampai hari ini
+  } else {
+    // Jika startDate dan/atau endDate tersedia
+    startSummary = startDate || "1900-01-01";
+    endSummary = endDate || moment().endOf("day").format("YYYY-MM-DD");
+  }
+
+  const whereTotal = {
+    deletedAt: null,
+    date: { [Op.between]: [startSummary, endSummary] },
+    ...(hasFilter && {}),
+    ...(customerIdFilter && { customer_id: customerIdFilter }),
+    ...(vegetableIdFilter && { vegetableId: vegetableIdFilter }),
+  };
+
+  const totalAll = await SalesTransaction.findOne({
+    where: whereTotal,
+    include: [
+      { model: MasterCustomer, as: "customer", attributes: [] },
+      { model: MasterVegetable, as: "vegetable", attributes: [] },
+    ],
     attributes: [
       [fn("SUM", col("total_price")), "totalPrice"],
       [fn("SUM", col("total_weight_kg")), "totalWeightKg"],
+      [fn("COUNT", col("SalesTransaction.id")), "transactionCount"],
+      [fn("COUNT", literal("*")), "totalData"],
     ],
     raw: true,
   });
 
+  const totalPrice = parseFloat(totalAll?.totalPrice || 0);
+  const totalWeightKg = parseFloat(totalAll?.totalWeightKg || 0);
+  const transactionCount = parseInt(totalAll?.transactionCount || 0);
+  const totalDataSummary = parseInt(totalAll?.totalData || 0);
+
   return {
     page,
     limit,
-    totalPrice: parseFloat(totalCurrentMonth.totalPrice || 0),
-    totalWeightKg: parseFloat(totalCurrentMonth.totalWeightKg || 0),
     total: count,
+    totalFilter: hasFilter ? count : totalDataSummary,
+    totalPrice,
+    totalWeightKg,
+    avgPricePerTransaction: transactionCount ? totalPrice / transactionCount : 0,
     data: sales,
   };
 };

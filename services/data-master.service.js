@@ -28,3 +28,21 @@ module.exports.getAll = async () => {
     owners: owners.map((o) => o.name),
   };
 };
+
+module.exports.getCustomers = async () => {
+  const customers = await MasterCustomer.findAll();
+
+  return customers;
+};
+
+module.exports.getVegetables = async () => {
+  const vegetables = await MasterVegetable.findAll();
+
+  return vegetables;
+};
+
+module.exports.getUnits = async () => {
+  const units = await MasterUnit.findAll();
+
+  return units;
+};
