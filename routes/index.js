@@ -40,8 +40,8 @@ router.use("/user", auth, authorize(["admin"]), userRoutes);
 // router.use("/owners", ownerRoute);
 
 // Endpoint dasar untuk test
-router.get("/", (req, res) => {
-  res.send("✅ API route active");
-});
+// router.get("/", (req, res) => {
+//   res.send("✅ API route active");
+// });
 
 module.exports = router;

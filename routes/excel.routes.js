@@ -10,6 +10,6 @@ const auth = require("../middlewares/auth.middleware");
 // });
 router.post("/import-sales", auth, authorize(["admin", "operator"]), upload.single("SakuTani"), excelController.importSales);
 router.post("/import-expenses", auth, authorize(["admin", "operator"]), upload.single("SakuTani"), excelController.importExpenses);
-router.get("/export", auth, upload.single("SakuTani"), excelController.exportFullReport);
+router.get("/export", auth, excelController.exportFullReport);
 
 module.exports = router;

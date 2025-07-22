@@ -1,7 +1,7 @@
 const dayjs = require("dayjs");
-const { Op, fn, col } = require("sequelize");
+const { Op, fn, col, literal } = require("sequelize");
 const moment = require("moment");
-const { ExpensesTransaction, MasterUnit } = require("../models");
+const { ExpensesTransaction, MasterUnit, User } = require("../models");
 const monthlyReportService = require("./monthly-report.service");
 const profitShareReport = require("./profit-share.service");
 
@@ -16,6 +16,10 @@ async function findOrCreateUnitByName(name) {
 
 module.exports.create = async (data, created_by) => {
   const { date, name, quantity, unit, price_per_unit, shipping_cost = 0, discount = 0, total_price, notes } = data;
+
+  if (!unit || unit.trim() === "") {
+    throw new Error("Satuan tidak boleh kosong");
+  }
 
   const dateResult = date && date.trim() !== "" ? date : dayjs().format("YYYY-MM-DD");
   const unitRecord = await findOrCreateUnitByName(unit);
@@ -41,7 +45,7 @@ module.exports.create = async (data, created_by) => {
   return transaction;
 };
 
-module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate }) => {
+module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate, sort_order = "desc" }) => {
   page = parseInt(page);
   limit = parseInt(limit);
   if (isNaN(page) || page < 1) page = 1;
@@ -63,10 +67,17 @@ module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate }) => 
     offset,
     limit,
     order: [
-      ["date", "DESC"],
+      ["date", sort_order.toUpperCase()],
       ["createdAt", "DESC"],
     ],
-    include: [{ model: MasterUnit, as: "unit", attributes: ["name"] }],
+    include: [
+      { model: MasterUnit, as: "unit", attributes: ["name"] },
+      {
+        model: User,
+        as: "user",
+        attributes: ["username"],
+      },
+    ],
   });
 
   const expenses = rows.map((tx) => ({
@@ -80,27 +91,45 @@ module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate }) => 
     discount: tx.discount,
     total_price: tx.total_price,
     notes: tx.notes,
-    createdAt: tx.createdAt,
-    updatedAt: tx.updatedAt,
+    created_by: tx.user?.username || null,
   }));
 
-  const startOfMonth = moment().startOf("month").format("YYYY-MM-DD");
-  const endOfMonth = moment().endOf("month").format("YYYY-MM-DD");
+  const hasFilter = startDate || endDate;
 
-  const totalCurrentMonth = await ExpensesTransaction.findOne({
+  let startSummary, endSummary;
+
+  if (!hasFilter) {
+    startSummary = moment().startOf("month").format("YYYY-MM-DD");
+    endSummary = moment().endOf("month").format("YYYY-MM-DD");
+  } else {
+    startSummary = startDate || "2000-01-01";
+    endSummary = endDate || moment().endOf("day").format("YYYY-MM-DD");
+  }
+
+  const totalAll = await ExpensesTransaction.findOne({
     where: {
       deletedAt: null,
-      date: { [Op.between]: [startOfMonth, endOfMonth] },
+      date: { [Op.between]: [startSummary, endSummary] },
     },
-    attributes: [[fn("SUM", col("total_price")), "totalPrice"]],
+    attributes: [
+      [fn("SUM", col("total_price")), "totalPrice"],
+      [fn("COUNT", col("ExpensesTransaction.id")), "transactionCount"],
+      // [fn("COUNT", literal("*")), "totalData"],
+    ],
     raw: true,
   });
+
+  const totalPrice = parseFloat(totalAll?.totalPrice || 0);
+  const transactionCount = parseInt(totalAll?.transactionCount || 0);
+  // const totalDataSummary = parseInt(totalAll?.totalData || 0);
 
   return {
     page,
     limit,
     total: count,
-    totalPrice: parseFloat(totalCurrentMonth.totalPrice || 0),
+    totalFilter: hasFilter ? count : transactionCount,
+    totalPrice,
+    avgPricePerTransaction: transactionCount ? totalPrice / transactionCount : 0,
     data: expenses,
   };
 };

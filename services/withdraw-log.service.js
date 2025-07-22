@@ -1,5 +1,5 @@
 const dayjs = require("dayjs");
-const { Op, col } = require("sequelize");
+const { Op, col, where } = require("sequelize");
 const logger = require("../utils/logger");
 const { WithdrawLog, UserBalance, UserBalanceLog, Owner, User } = require("../models");
 
@@ -89,7 +89,7 @@ module.exports.getAllWithoutDelete = async ({ page = 1, limit = 10, startDate, e
         attributes: [],
       },
     ],
-    attributes: ["id", [col("owner.name"), "name"], "amount", "date", "createdAt", "updatedAt", "deletedAt"],
+    attributes: ["id", [col("owner.name"), "name"], "amount", "date", "deletedAt"],
     order: [
       ["date", "DESC"],
       ["createdAt", "DESC"],
@@ -98,6 +98,70 @@ module.exports.getAllWithoutDelete = async ({ page = 1, limit = 10, startDate, e
     offset,
     raw: true,
   });
+};
+
+module.exports.getAllGroup = async ({ page = 1, limit = 10 }) => {
+  page = parseInt(page);
+  limit = parseInt(limit);
+
+  const offset = (page - 1) * limit;
+
+  const logs = await WithdrawLog.findAll({
+    where: { deletedAt: null },
+    include: [
+      {
+        model: Owner,
+        as: "owner",
+        attributes: [],
+      },
+    ],
+    attributes: ["id", [col("owner.name"), "name"], "amount", "date", "deletedAt"],
+    order: [
+      ["date", "ASC"],
+      ["createdAt", "ASC"],
+    ],
+    limit,
+    offset,
+    raw: true,
+  });
+
+  const grouped = {};
+
+  logs.forEach((log) => {
+    const month = dayjs(log.date).format("YYYY-MM");
+
+    if (!grouped[month]) {
+      grouped[month] = {
+        totalAmount: 0,
+        data: [],
+      };
+    }
+
+    const formattedAmount = parseFloat(log.amount);
+
+    grouped[month].totalAmount += formattedAmount;
+
+    grouped[month].data.push({
+      id: log.id,
+      name: log.name,
+      amount: formattedAmount.toFixed(2),
+      date: dayjs(log.date).format("YYYY-MM-DD"),
+    });
+  });
+
+  const result = Object.keys(grouped)
+    .sort()
+    .map((month) => ({
+      month,
+      totalAmount: grouped[month].totalAmount.toFixed(2),
+      data: grouped[month].data,
+    }));
+
+  return {
+    page,
+    limit,
+    result: result.reverse(),
+  };
 };
 
 module.exports.getById = async (id) => {

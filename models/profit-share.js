@@ -32,5 +32,12 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
     }
   );
+
+  ProfitShare.associate = (models) => {
+    ProfitShare.belongsTo(models.Owner, {
+      foreignKey: "owner_id",
+      as: "owner",
+    });
+  };
   return ProfitShare;
 };

@@ -36,6 +36,30 @@ module.exports.getAllWithoutDelete = async (req, res) => {
   }
 };
 
+module.exports.getAllGroup = async (req, res) => {
+  const { page, limit } = req.query;
+
+  try {
+    const {
+      page: pages,
+      limit: take,
+      result,
+    } = await withdrawLogService.getAllGroup({
+      page,
+      limit,
+    });
+
+    res.json({
+      success: true,
+      page: pages,
+      limit: take,
+      data: result,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 module.exports.getById = async (req, res) => {
   try {
     const data = await withdrawLogService.getById(req.params.id);

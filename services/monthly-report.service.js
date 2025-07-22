@@ -214,8 +214,16 @@ module.exports.getMonthlyReportDetailsById = async (id) => {
     updatedAt: tx.updatedAt,
   }));
 
+  // Hitung total sales
+  const totalSales = sales.reduce((acc, tx) => acc + Number(tx.total_price || 0), 0);
+
+  // Hitung total expenses
+  const totalExpenses = expenses.reduce((acc, tx) => acc + Number(tx.total_price || 0), 0);
+
   return {
     // report,
+    totalSales,
+    totalExpenses,
     sales,
     expenses,
   };

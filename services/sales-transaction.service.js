@@ -60,7 +60,7 @@ module.exports.findOrCreateByName = async (data, created_by) => {
   return transaction;
 };
 
-module.exports.getAll = async ({ page = 1, limit = 10, customer = "", item_name = "", startDate = "", endDate = "", sort_by = "date", sort_order = "desc" }) => {
+module.exports.getAll = async ({ page = 1, limit = 10, customer = "", startDate = "", endDate = "", sort_by = "date", sort_order = "desc" }) => {
   page = parseInt(page);
   limit = parseInt(limit);
   if (isNaN(page) || page < 1) page = 1;
@@ -80,21 +80,21 @@ module.exports.getAll = async ({ page = 1, limit = 10, customer = "", item_name 
   }
 
   // === Cari vegetableId dari nama ===
-  let vegetableIdFilter = null;
-  if (item_name) {
-    const foundVegetable = await MasterVegetable.findOne({
-      where: { name: { [Op.iLike]: item_name } },
-      attributes: ["id"],
-      raw: true,
-    });
-    vegetableIdFilter = foundVegetable ? foundVegetable.id : -1;
-  }
+  // let vegetableIdFilter = null;
+  // if (item_name) {
+  //   const foundVegetable = await MasterVegetable.findOne({
+  //     where: { name: { [Op.iLike]: item_name } },
+  //     attributes: ["id"],
+  //     raw: true,
+  //   });
+  //   vegetableIdFilter = foundVegetable ? foundVegetable.id : -1;
+  // }
 
   // === WHERE utama ===
   const where = {
     deletedAt: null,
     ...(customerIdFilter && { customer_id: customerIdFilter }),
-    ...(vegetableIdFilter && { vegetableId: vegetableIdFilter }),
+    // ...(vegetableIdFilter && { vegetableId: vegetableIdFilter }),
   };
 
   if (startDate && endDate) {
@@ -158,7 +158,7 @@ module.exports.getAll = async ({ page = 1, limit = 10, customer = "", item_name 
     updatedAt: tx.updatedAt,
   }));
 
-  const hasFilter = customer || item_name || startDate || endDate;
+  const hasFilter = customer || startDate || endDate;
 
   // Konversi tanggal default jika tidak ada filter
   let startSummary, endSummary;
@@ -173,16 +173,16 @@ module.exports.getAll = async ({ page = 1, limit = 10, customer = "", item_name 
     endSummary = moment().endOf("day").format("YYYY-MM-DD"); // sampai hari ini
   } else {
     // Jika startDate dan/atau endDate tersedia
-    startSummary = startDate || "1900-01-01";
+    startSummary = startDate || "2000-01-01";
     endSummary = endDate || moment().endOf("day").format("YYYY-MM-DD");
   }
 
   const whereTotal = {
     deletedAt: null,
     date: { [Op.between]: [startSummary, endSummary] },
-    ...(hasFilter && {}),
+    // ...(hasFilter && {}),
     ...(customerIdFilter && { customer_id: customerIdFilter }),
-    ...(vegetableIdFilter && { vegetableId: vegetableIdFilter }),
+    // ...(vegetableIdFilter && { vegetableId: vegetableIdFilter }),
   };
 
   const totalAll = await SalesTransaction.findOne({
@@ -209,7 +209,7 @@ module.exports.getAll = async ({ page = 1, limit = 10, customer = "", item_name 
     page,
     limit,
     total: count,
-    totalFilter: hasFilter ? count : totalDataSummary,
+    totalFilter: hasFilter ? count : transactionCount,
     totalPrice,
     totalWeightKg,
     avgPricePerTransaction: transactionCount ? totalPrice / transactionCount : 0,
