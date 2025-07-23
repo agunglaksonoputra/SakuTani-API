@@ -45,14 +45,34 @@ module.exports.generateAllReports = async (req, res) => {
   }
 };
 
+// module.exports.getCurrentReport = async (req, res) => {
+//   try {
+//     const report = await monthlyReport.getOrGenerateCurrentMonthReport();
+//     const totalUserBalance = await userBalanceService.getTotalUserBalance();
+//     res.json({
+//       success: true,
+//       data: {
+//         ...report.toJSON(),
+//         total_user_balance: totalUserBalance,
+//       },
+//     });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
+
 module.exports.getCurrentReport = async (req, res) => {
   try {
     const report = await monthlyReport.getOrGenerateCurrentMonthReport();
     const totalUserBalance = await userBalanceService.getTotalUserBalance();
+
+    const baseReport = report.existingReport?.get?.() ?? report.newReport?.get?.() ?? {};
+
     res.json({
       success: true,
       data: {
-        ...report.toJSON(),
+        ...baseReport,
+        ...report.growthData,
         total_user_balance: totalUserBalance,
       },
     });
