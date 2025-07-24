@@ -43,12 +43,13 @@ jobs:
             git checkout main || git checkout -b main origin/main
             git pull origin main
 
-            if [ -f ".env" ]; then
-            echo "🛑 File .env sudah ada. Tidak membuat ulang."
-            else
-            echo "🧪 Membuat file env.prod dari secret..."
-            echo "${{ secrets.ENV_PROD }}" > .env.prod
+            if [ -f ".env.prod" ]; then
+            echo "🗑 Menghapus file .env.prod lama..."
+            rm .env.prod
             fi
+
+            echo "🧪 Membuat file .env.prod dari secret..."
+            echo "${{ secrets.ENV_PROD }}" > .env.prod
 
             echo "🐳 Build dan jalankan Docker Compose (Production)..."
             TAG=prod ENV_FILE=.env.prod PORT=3016 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
