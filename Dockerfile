@@ -1,14 +1,7 @@
-FROM node:18
-
+FROM node:18-alpine
 WORKDIR /app
-
-COPY . .
-
+COPY package*.json ./
 RUN npm install
-RUN npm run build
-
-RUN npm install -g serve
-
+COPY . .
 EXPOSE 3016
-
-CMD ["serve", "-s", "dist", "-l", "3016"]
+CMD ["node", "index.js"]
