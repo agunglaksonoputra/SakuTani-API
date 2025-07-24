@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: saku-tani-api
     container_name: saku-tani-api
     ports:
       - "${PORT}:${PORT}"
