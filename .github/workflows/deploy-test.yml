@@ -1,16 +1,16 @@
-name: Deploy to Test
+name: Deploy to Staging
 
 on:
   push:
     branches:
-      - testing
+      - staging
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH to Test
+      - name: Deploy via SSH to Staging
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -20,7 +20,7 @@ jobs:
           script: |
             set -e
 
-            PROJECT_DIR="/home/${{ secrets.VPS_USER }}/projects/saku-tani-api"
+            PROJECT_DIR="/home/${{ secrets.VPS_USER }}/projects/staging/saku-tani-api"
             REPO_URL="https://github.com/agunglaksonoputra/SakuTani-API.git"
 
             echo "📁 Cek direktori proyek..."
@@ -38,10 +38,10 @@ jobs:
 
             cd "$PROJECT_DIR"
 
-            echo "🔄 Checkout dan pull branch 'testing'..."
+            echo "🔄 Checkout dan pull branch 'staging'..."
             git fetch origin
-            git checkout testing || git checkout -b testing origin/testing
-            git pull origin testing
+            git checkout staging || git checkout -b staging origin/staging
+            git pull origin staging
 
             echo "🐳 Build dan jalankan Docker Compose..."
             TAG=test ENV_FILE=.env.test PORT=${{ secrets.TEST_VPS_PORT }} docker compose up -d --build
