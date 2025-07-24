@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   api:
-    container_name: saku_tani_api_prod
+    container_name: saku-tani-api-prod
 
 networks:
   app-net:
