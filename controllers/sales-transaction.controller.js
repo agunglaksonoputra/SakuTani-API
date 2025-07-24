@@ -13,12 +13,16 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const { page, limit, startDate, endDate } = req.query;
+    const { page, limit, startDate, endDate, customer, item_name, sort_by, sort_order } = req.query;
     const data = await saleTransactionservice.getAll({
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 10,
       startDate,
       endDate,
+      customer,
+      item_name,
+      sort_by: sort_by || "date",
+      sort_order: sort_order || "desc",
     });
     res.json({ success: true, ...data });
   } catch (e) {

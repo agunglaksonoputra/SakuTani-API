@@ -11,6 +11,7 @@ module.exports.getAll = async () => {
           attributes: ["name"],
         },
       ],
+      order: [["id", "ASC"]],
       raw: true,
       nest: true,
     });

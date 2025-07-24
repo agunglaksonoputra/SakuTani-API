@@ -2,7 +2,7 @@ const userBalanceService = require("../services/user-balance.service");
 
 module.exports.getAll = async (req, res) => {
   const balances = await userBalanceService.getAll();
-  res.json(balances);
+  res.json({ success: true, data: balances });
 };
 
 module.exports.getByOwner = async (req, res) => {
@@ -10,7 +10,7 @@ module.exports.getByOwner = async (req, res) => {
   try {
     const balance = await userBalanceService.getByOwner(ownerId);
     if (!balance) return res.status(404).json({ message: "Not found" });
-    res.json(balance);
+    res.json({ success: true, data: balance });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

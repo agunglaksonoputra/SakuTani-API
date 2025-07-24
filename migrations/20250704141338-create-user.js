@@ -28,6 +28,16 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "RESTRICT",
       },
+      reatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"), // ✅ default now
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"), // ✅ default now
+      },
       deletedAt: {
         type: Sequelize.DATE,
         allowNull: true,

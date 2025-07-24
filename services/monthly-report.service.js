@@ -106,14 +106,43 @@ module.exports.getOrGenerateCurrentMonthReport = async () => {
 
   const newReport = await module.exports.generateMonthlyReport(monthlyReportDate);
 
+  const previousMonthDate = dayjs(monthlyReportDate).subtract(1, "month").format("YYYY-MM-DD");
+  const previousReport = await MonthlyReport.findOne({
+    where: { date: previousMonthDate },
+  });
+
+  const calculateGrowth = (current, previous) => {
+    if (!previous || previous === 0) return null;
+    return ((current - previous) / previous) * 100;
+  };
+
+  let growthData = {};
+  if (previousReport) {
+    growthData = {
+      growth_sales: calculateGrowth(newReport.total_sales, previousReport.total_sales),
+      growth_expenses: calculateGrowth(newReport.total_expenses, previousReport.total_expenses),
+      growth_profit: calculateGrowth(newReport.total_profit, previousReport.total_profit),
+    };
+  }
+
+  // Jika report sudah ada, update isinya dan return + growthData
   if (existingReport) {
     await existingReport.update({
       ...newReport.dataValues,
     });
-    return existingReport;
+
+    // Tambahkan growthData hanya untuk return, bukan ke DB
+    return {
+      existingReport,
+      growthData,
+    };
   }
 
-  return newReport;
+  // Return report baru dengan growthData juga
+  return {
+    newReport,
+    growthData,
+  };
 };
 
 module.exports.updateMonthReport = async (date) => {
@@ -214,8 +243,16 @@ module.exports.getMonthlyReportDetailsById = async (id) => {
     updatedAt: tx.updatedAt,
   }));
 
+  // Hitung total sales
+  const totalSales = sales.reduce((acc, tx) => acc + Number(tx.total_price || 0), 0);
+
+  // Hitung total expenses
+  const totalExpenses = expenses.reduce((acc, tx) => acc + Number(tx.total_price || 0), 0);
+
   return {
     // report,
+    totalSales,
+    totalExpenses,
     sales,
     expenses,
   };

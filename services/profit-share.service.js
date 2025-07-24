@@ -2,7 +2,26 @@ const dayjs = require("dayjs");
 const { ProfitShare, Owner, MonthlyReport, UserBalance, UserBalanceLog } = require("../models");
 
 module.exports.getAll = async () => {
-  await ProfitShare.findAll({ order: [["date", "DESC"]] });
+  const data = await ProfitShare.findAll({
+    attributes: { exclude: ["createdAt", "updatedAt", "owner_id"] },
+    include: [
+      {
+        model: Owner,
+        as: "owner",
+        attributes: ["name"],
+      },
+    ],
+    order: [["date", "DESC"]],
+  });
+
+  return data.map((item) => {
+    const json = item.toJSON();
+    return {
+      ...json,
+      name: json.owner?.name,
+      owner: undefined,
+    };
+  });
 };
 
 module.exports.getById = async (id) => {

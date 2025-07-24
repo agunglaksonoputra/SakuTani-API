@@ -7,6 +7,7 @@ const app = express();
 
 const db = require("./models");
 const routes = require("./routes");
+const v2Routes = require("./routes/v2");
 
 app.use(
   cors({
@@ -17,6 +18,7 @@ app.use(
 app.use(express.json());
 
 app.use("/api", routes);
+app.use("/api/v2", v2Routes);
 
 const PORT = process.env.PORT || 3000;
 
