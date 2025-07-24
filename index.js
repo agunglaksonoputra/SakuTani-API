@@ -9,9 +9,18 @@ const db = require("./models");
 const routes = require("./routes");
 const v2Routes = require("./routes/v2");
 
+const allowedOrigins = ["http://localhost:5173", "https://dashboard.sakutani.my.id"];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like curl or mobile app)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
