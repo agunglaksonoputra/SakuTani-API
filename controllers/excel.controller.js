@@ -661,13 +661,9 @@ exports.exportFullReport = async (req, res) => {
         const name = w.owner?.name?.toLowerCase() ?? "";
 
         if (!isNaN(amount)) {
-          if (name === "joko") {
-            bayar.joko += amount;
-          } else if (name === "pardi") {
-            bayar.pardi += amount;
-          } else if (name === "zakat") {
-            bayar.zakat += amount;
-          }
+          if (name === "joko") bayar.joko += amount;
+          else if (name === "pardi") bayar.pardi += amount;
+          else if (name === "zakat") bayar.zakat += amount;
         }
       }
 
