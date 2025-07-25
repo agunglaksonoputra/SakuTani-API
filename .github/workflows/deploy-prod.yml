@@ -77,7 +77,8 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.DIR_PROD }}"
-            TAG=prod ENV_FILE=.env.prod PORT=3016 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+            TAG=prod ENV_FILE=.env.prod PORT=3016 docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache
+            TAG=prod ENV_FILE=.env.prod PORT=3016 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
       - name: ✅ Selesai Deploy
         run: echo "✅ Deploy production selesai!"
