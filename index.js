@@ -9,19 +9,19 @@ const db = require("./models");
 const routes = require("./routes");
 const v2Routes = require("./routes/v2");
 
-const allowedOrigins = ["http://localhost:5173", "https://dashboard.sakutani.my.id"];
+const allowedOrigins = ["https://dashboard.sakutani.my.id", "http://localhost:5173"];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like curl or mobile app)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(new Error("❌ Not allowed by CORS: " + origin));
       }
     },
     credentials: true,
+    optionsSuccessStatus: 200,
   })
 );
 app.use(express.json());
