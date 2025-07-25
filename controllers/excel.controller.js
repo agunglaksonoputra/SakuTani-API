@@ -667,6 +667,10 @@ exports.exportFullReport = async (req, res) => {
         }
       }
 
+      saldo.zakat += zakat - bayar.zakat;
+      saldo.joko += joko - bayar.joko;
+      saldo.pardi += pardi - bayar.pardi;
+
       totalWithdrawZakat += parseFloat(bayar.zakat) || 0;
       totalWithdrawJoko += parseFloat(bayar.joko) || 0;
       totalWithdrawPardi += parseFloat(bayar.pardi) || 0;
