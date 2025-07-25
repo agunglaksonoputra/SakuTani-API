@@ -350,7 +350,7 @@ exports.exportFullReport = async (req, res) => {
       summaryHeaderRow.eachCell((cell, colNumber) => {
         cell.font = { bold: true };
         cell.border = {
-          top: { style: "thin" },
+          top: { style: "double" },
           left: { style: "thin" },
           bottom: { style: "thin" },
           right: { style: "thin" },
@@ -359,6 +359,9 @@ exports.exportFullReport = async (req, res) => {
 
       // Merge cells for summary header
       salesSheet.mergeCells(`A${summaryHeaderRow.number}:K${summaryHeaderRow.number}`);
+
+      const totalKg = sales.reduce((sum, item) => sum + parseFloat(item.total_weight_kg), 0);
+      const totalHarga = sales.reduce((sum, item) => sum + parseFloat(item.total_price), 0);
 
       // Add total row
       const totalRow = salesSheet.addRow([
@@ -369,9 +372,9 @@ exports.exportFullReport = async (req, res) => {
         "",
         "",
         "",
-        `=SUM(H2:H${sales.length + 1})`, // Total kg
+        totalKg, // Total kg
         "",
-        `=SUM(J2:J${sales.length + 1})`, // Total harga
+        totalHarga, // Total harga
         "",
       ]);
 
@@ -386,7 +389,7 @@ exports.exportFullReport = async (req, res) => {
         };
       });
 
-      salesSheet.mergeCells(`A${totalRow.number}:B${totalRow.number}`);
+      salesSheet.mergeCells(`A${totalRow.number}:D${totalRow.number}`);
 
       // Format and align totals
       totalRow.getCell(1).alignment = { horizontal: "right" };
@@ -396,7 +399,7 @@ exports.exportFullReport = async (req, res) => {
       totalRow.getCell(10).numFmt = "#,##0";
 
       // Add count row
-      const countRow = salesSheet.addRow(["Jumlah Transaksi:", "", sales.length, "", "", "", "", "", "", "", ""]);
+      const countRow = salesSheet.addRow(["Jumlah Transaksi:", "", "", "", sales.length, "", "", "", "", "", ""]);
 
       // Style count row
       countRow.eachCell((cell) => {
@@ -412,8 +415,8 @@ exports.exportFullReport = async (req, res) => {
       countRow.getCell(1).alignment = { horizontal: "right" };
       countRow.getCell(3).alignment = { horizontal: "right" };
 
-      salesSheet.mergeCells(`A${countRow.number}:B${countRow.number}`);
-      salesSheet.mergeCells(`C${countRow.number}:J${countRow.number}`);
+      salesSheet.mergeCells(`A${countRow.number}:D${countRow.number}`);
+      salesSheet.mergeCells(`E${countRow.number}:J${countRow.number}`);
     }
 
     /*** ===== Sheet 2: Biaya ===== ***/
@@ -490,6 +493,8 @@ exports.exportFullReport = async (req, res) => {
       row.getCell(10).alignment = { horizontal: "left" }; // Keterangan
     });
 
+    const totalExpenses = expenses.reduce((sum, item) => sum + parseFloat(item.total_price), 0);
+
     // Add total row if there are expenses
     if (expenses.length > 0) {
       expenseSheet.addRow([]);
@@ -503,7 +508,7 @@ exports.exportFullReport = async (req, res) => {
         "",
         "",
         "",
-        `=SUM(I2:I${expenses.length + 1})`, // Formula untuk total
+        totalExpenses, // Formula untuk total
         "",
       ]);
 
@@ -615,6 +620,10 @@ exports.exportFullReport = async (req, res) => {
     const reports = await MonthlyReport.findAll({ order: [["date", "ASC"]] });
 
     let saldo = { zakat: 0, joko: 0, pardi: 0 };
+    let totalReport = { zakat: 0, joko: 0, pardi: 0 };
+    let totalWithdrawZakat = 0;
+    let totalWithdrawJoko = 0;
+    let totalWithdrawPardi = 0;
     let no = 1;
 
     for (const report of reports) {
@@ -628,6 +637,10 @@ exports.exportFullReport = async (req, res) => {
       const zakat = laba * 0.1;
       const joko = laba * 0.45;
       const pardi = laba * 0.45;
+
+      totalReport.zakat += zakat;
+      totalReport.joko += joko;
+      totalReport.pardi += pardi;
 
       const startOfMonth = dayjs(report.date).startOf("month").format("YYYY-MM-DD");
       const endOfMonth = dayjs(report.date).endOf("month").format("YYYY-MM-DD");
@@ -648,15 +661,19 @@ exports.exportFullReport = async (req, res) => {
         const name = w.owner?.name?.toLowerCase() ?? "";
 
         if (!isNaN(amount)) {
-          if (name === "joko") bayar.joko += amount;
-          else if (name === "pardi") bayar.pardi += amount;
-          else if (name === "zakat") bayar.zakat += amount;
+          if (name === "joko") {
+            bayar.joko += amount;
+          } else if (name === "pardi") {
+            bayar.pardi += amount;
+          } else if (name === "zakat") {
+            bayar.zakat += amount;
+          }
         }
       }
 
-      saldo.zakat += zakat - bayar.zakat;
-      saldo.joko += joko - bayar.joko;
-      saldo.pardi += pardi - bayar.pardi;
+      totalWithdrawZakat += parseFloat(bayar.zakat) || 0;
+      totalWithdrawJoko += parseFloat(bayar.joko) || 0;
+      totalWithdrawPardi += parseFloat(bayar.pardi) || 0;
 
       const normalizeSaldo = (value) => {
         return Math.abs(value) === 1 ? 0 : value;
@@ -690,26 +707,19 @@ exports.exportFullReport = async (req, res) => {
       });
     }
 
+    const totalSalesReport = reports.reduce((sum, item) => sum + parseFloat(item.total_sales), 0);
+    const totalExpensesReport = reports.reduce((sum, item) => sum + parseFloat(item.total_expenses), 0);
+    const totalProfitReport = reports.reduce((sum, item) => sum + parseFloat(item.total_profit), 0);
+
     // Add total row if needed
     if (reports.length > 0) {
       financeSheet.addRow([]);
 
-      const totalRow = financeSheet.addRow([
-        "TOTAL",
-        "",
-        `=SUM(C3:C${reports.length + 2})`,
-        `=SUM(D3:D${reports.length + 2})`,
-        `=SUM(E3:E${reports.length + 2})`,
-        `=SUM(F3:F${reports.length + 2})`,
-        `=SUM(G3:G${reports.length + 2})`,
-        `=SUM(H3:H${reports.length + 2})`,
-        `=SUM(I3:I${reports.length + 2})`,
-        `=SUM(J3:J${reports.length + 2})`,
-        `=SUM(K3:K${reports.length + 2})`,
-        "",
-        "",
-        "",
-      ]);
+      const totalRow = financeSheet.addRow(["TOTAL", "", totalSalesReport, totalExpensesReport, totalProfitReport, totalReport.zakat, totalReport.joko, totalReport.pardi, totalWithdrawZakat, totalWithdrawJoko, totalWithdrawPardi, "", "", ""]);
+
+      [3, 4, 5, 6, 7, 8, 9, 10, 11].forEach((colNum) => {
+        totalRow.getCell(colNum).numFmt = "#,##0";
+      });
 
       // Make total row bold
       totalRow.eachCell((cell) => {
