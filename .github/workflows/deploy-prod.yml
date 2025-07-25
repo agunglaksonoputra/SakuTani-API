@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH to Production
+      - name: 📁 Cek dan Persiapkan Direktori Proyek
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -19,40 +19,65 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-
             PROJECT_DIR="${{ secrets.DIR_PROD }}"
-            REPO_URL="https://github.com/agunglaksonoputra/SakuTani-API.git"
-
-            echo "📁 Cek direktori proyek..."
             if [ -d "$PROJECT_DIR" ]; then
               if [ ! -d "$PROJECT_DIR/.git" ]; then
-                echo "⚠️ Folder sudah ada tapi bukan Git repo. Menghapusnya..."
+                echo "⚠️ Folder ada tapi bukan repo Git. Menghapusnya..."
                 rm -rf "$PROJECT_DIR"
               fi
             fi
-
             if [ ! -d "$PROJECT_DIR" ]; then
-              echo "⬇️ Clone repository..."
-              git clone "$REPO_URL" "$PROJECT_DIR"
+              echo "⬇️ Cloning repository..."
+              git clone https://github.com/agunglaksonoputra/SakuTani-API.git "$PROJECT_DIR"
             fi
 
-            cd "$PROJECT_DIR"
+            if [ ! -d "$PROJECT_DIR/.git" ]; then
+              echo "❌ Gagal clone repo dengan benar!"
+              exit 
+            fi
 
-            echo "🔄 Checkout dan pull branch 'main'..."
+      - name: 🔄 Git Checkout dan Pull Branch Main
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            cd "${{ secrets.DIR_PROD }}"
             git fetch origin
             git checkout main || git checkout -b main origin/main
             git pull origin main
 
+      - name: 🧪 Buat Ulang File .env.prod
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            cd "${{ secrets.DIR_PROD }}"
             if [ -f ".env.prod" ]; then
-            echo "🗑 Menghapus file .env.prod lama..."
-            rm .env.prod
+              echo "🗑 Menghapus file .env.prod lama..."
+              rm .env.prod
             fi
-
-            echo "🧪 Membuat file .env.prod dari secret..."
+            echo "Membuat file .env.prod baru..."
             echo "${{ secrets.ENV_PROD }}" > .env.prod
 
-            echo "🐳 Build dan jalankan Docker Compose (Production)..."
+      - name: 🐳 Build dan Jalankan Docker Compose
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            cd "${{ secrets.DIR_PROD }}"
             TAG=prod ENV_FILE=.env.prod PORT=3016 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
-
-            echo "✅ Deploy production selesai!"
+      - name: ✅ Selesai Deploy
+        run: echo "✅ Deploy production selesai!"
