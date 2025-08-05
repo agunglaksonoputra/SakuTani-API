@@ -12,22 +12,21 @@ module.exports.getAllReports = async () => {
   const profitSharesRaw = await ProfitShare.findAll({
     attributes: { exclude: ["createdAt", "updatedAt", "created_by"] },
     include: [{ model: Owner, as: "owner", attributes: ["id", "name"] }],
-    order: [["date", "ASC"]], // Tambahkan order untuk konsistensi
+    order: [["date", "ASC"]],
     raw: true,
   });
 
   const withdrawsRaw = await WithdrawLog.findAll({
     attributes: { exclude: ["createdAt", "updatedAt"] },
     include: [{ model: Owner, as: "owner", attributes: ["id", "name"] }],
-    order: [["date", "ASC"]], // Tambahkan order untuk konsistensi
+    order: [["date", "ASC"]],
     raw: true,
   });
 
-  // Transform data dengan parsing amount yang benar
   const profitShares = profitSharesRaw.map((item) => ({
     id: item.id,
     date: item.date,
-    amount: parseFloat(item.amount), // Parse ke float untuk kalkulasi
+    amount: parseFloat(item.amount),
     name: item["owner.name"],
     owner_id: item.owner_id,
   }));
@@ -35,14 +34,13 @@ module.exports.getAllReports = async () => {
   const withdraws = withdrawsRaw.map((item) => ({
     id: item.id,
     date: item.date,
-    amount: parseFloat(item.amount), // Parse ke float untuk kalkulasi
+    amount: parseFloat(item.amount),
     name: item["owner.name"],
     owner_id: item.owner_id,
   }));
 
   const getMonthYear = (date) => dayjs(date).format("YYYY-MM");
 
-  // Group profit shares dan withdraws berdasarkan bulan
   const groupedProfitShares = {};
   const groupedWithdraws = {};
 
@@ -58,7 +56,6 @@ module.exports.getAllReports = async () => {
     groupedWithdraws[key].push(item);
   }
 
-  // Tracking saldo kumulatif per owner
   const ownerCumulativeBalances = {};
 
   const result = [];
@@ -69,14 +66,11 @@ module.exports.getAllReports = async () => {
     const monthlyProfitShares = groupedProfitShares[monthKey] || [];
     const monthlyWithdraws = groupedWithdraws[monthKey] || [];
 
-    // Object untuk menyimpan balance bulan ini per owner
     const monthlyOwnerBalances = {};
 
-    // Proses profit share bulan ini
     for (const ps of monthlyProfitShares) {
       const id = ps.owner_id;
 
-      // Initialize jika belum ada
       if (!ownerCumulativeBalances[id]) {
         ownerCumulativeBalances[id] = 0;
       }
@@ -88,16 +82,13 @@ module.exports.getAllReports = async () => {
         };
       }
 
-      // Tambah ke monthly change dan cumulative
       monthlyOwnerBalances[id].monthlyChange += ps.amount;
       ownerCumulativeBalances[id] += ps.amount;
     }
 
-    // Proses withdraw bulan ini
     for (const wd of monthlyWithdraws) {
       const id = wd.owner_id;
 
-      // Initialize jika belum ada
       if (!ownerCumulativeBalances[id]) {
         ownerCumulativeBalances[id] = 0;
       }
@@ -109,15 +100,12 @@ module.exports.getAllReports = async () => {
         };
       }
 
-      // Kurangi dari monthly change dan cumulative
       monthlyOwnerBalances[id].monthlyChange -= wd.amount;
       ownerCumulativeBalances[id] -= wd.amount;
     }
 
-    // Buat array balance untuk response
     const balanceArray = [];
 
-    // Tambahkan semua owner yang memiliki cumulative balance
     for (const ownerId in ownerCumulativeBalances) {
       const ownerIdInt = parseInt(ownerId);
       const ownerName = monthlyOwnerBalances[ownerId]?.name || profitShares.find((p) => p.owner_id === ownerIdInt)?.name || withdraws.find((w) => w.owner_id === ownerIdInt)?.name || "Unknown";
@@ -128,14 +116,12 @@ module.exports.getAllReports = async () => {
       balanceArray.push({
         owner_id: ownerIdInt,
         name: ownerName,
-        balance: parseFloat(cumulativeTotal.toFixed(2)), // Balance = saldo kumulatif
+        balance: parseFloat(cumulativeTotal.toFixed(2)),
       });
     }
 
-    // Sort balance array berdasarkan owner_id untuk konsistensi
     balanceArray.sort((a, b) => a.owner_id - b.owner_id);
 
-    // Konversi amount kembali ke string dengan format yang benar untuk response
     const formattedProfitShares = monthlyProfitShares.map((ps) => ({
       ...ps,
       amount: ps.amount.toFixed(2),

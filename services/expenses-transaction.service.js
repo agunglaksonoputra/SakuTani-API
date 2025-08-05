@@ -92,6 +92,7 @@ module.exports.getAll = async ({ page = 1, limit = 10, startDate, endDate, sort_
     total_price: tx.total_price,
     notes: tx.notes,
     created_by: tx.user?.username || null,
+    createdAt: tx.createdAt,
   }));
 
   const hasFilter = startDate || endDate;
