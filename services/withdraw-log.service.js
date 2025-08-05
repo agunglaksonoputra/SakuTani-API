@@ -89,7 +89,7 @@ module.exports.getAllWithoutDelete = async ({ page = 1, limit = 10, startDate, e
         attributes: [],
       },
     ],
-    attributes: ["id", [col("owner.name"), "name"], "amount", "date", "deletedAt"],
+    attributes: ["id", [col("owner.name"), "name"], "amount", "date", "deletedAt", "createdAt"],
     order: [
       ["date", "DESC"],
       ["createdAt", "DESC"],

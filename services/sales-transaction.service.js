@@ -155,7 +155,6 @@ module.exports.getAll = async ({ page = 1, limit = 10, customer = "", startDate 
     notes: tx.notes,
     created_by: tx.user?.username || null,
     createdAt: tx.createdAt,
-    updatedAt: tx.updatedAt,
   }));
 
   const hasFilter = customer || startDate || endDate;
@@ -225,6 +224,7 @@ module.exports.update = async (id, data) => {
   const transaction = await SalesTransaction.findByPk(id);
   if (!transaction) throw new Error("Transaction not found");
   await transaction.update(data);
+  await monthlyReportService.updateMonthReport(transaction.date);
   return transaction;
 };
 
