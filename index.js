@@ -34,8 +34,18 @@ app.use(
 // );
 app.use(express.json());
 
-app.use("/api", routes);
-app.use("/api/v2", v2Routes);
+const rateLimit = require("express-rate-limit");
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: false,
+  legacyHeaders: false,
+});
+
+app.use("/api", apiLimiter, routes);
+app.use("/api/v2", apiLimiter, v2Routes);
 
 const PORT = process.env.PORT || 3000;
 
