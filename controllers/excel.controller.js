@@ -29,14 +29,23 @@ exports.importSales = async (req, res) => {
     await workbook.xlsx.load(req.file.buffer);
     const worksheet = workbook.worksheets[2];
 
+    const activeCount = await SalesTransaction.count({
+      where: {
+        deletedAt: null,
+      },
+    });
+
+    const startRow = 5 + activeCount + (activeCount > 0 ? 1 : 0);
+
     const rows = [];
     const updatedMonths = new Set();
 
-    for (let i = 5; i <= worksheet.rowCount; i++) {
+    let nextId = activeCount + 1;
+
+    for (let i = startRow; i <= worksheet.rowCount; i++) {
       const row = worksheet.getRow(i);
       const values = row.values;
 
-      const id = getCellValue(values[2]);
       const dateRaw = getCellValue(values[3]);
       const customerNameRaw = getCellValue(values[4]);
       const itemNameRaw = getCellValue(values[5]);
@@ -48,38 +57,23 @@ exports.importSales = async (req, res) => {
       const totalPrice = parseFloat(getCellValue(values[11])) || 0;
       const notes = getCellValue(values[12]);
 
-      // Lewati jika data wajib kosong
       if (!dateRaw || !customerNameRaw || !itemNameRaw || !quantity || !unitNameRaw || !totalPrice) {
         continue;
       }
 
-      if (isNaN(id)) continue; // skip jika ID tidak valid
-
-      const existing = await SalesTransaction.findByPk(id);
-      if (existing) {
-        console.log(`Data dengan id ${id} sudah ada, dilewat.`);
-        continue;
-      }
-
-      // Bersihkan nama vegetable
       const itemName = typeof itemNameRaw === "string" ? itemNameRaw.trim().toLowerCase() : String(itemNameRaw).toLowerCase();
-      // Cari atau buat vegetable
       let vegetable = await Vegetable.findOne({ where: { name: itemName } });
       if (!vegetable) {
         vegetable = await Vegetable.create({ name: itemName });
       }
 
-      // Bersihkan nama customer
       const customerName = typeof customerNameRaw === "string" ? customerNameRaw.trim() : String(customerNameRaw);
-      // Cari atau buat customer
       let customer = await Customer.findOne({ where: { name: customerName } });
       if (!customer) {
         customer = await Customer.create({ name: customerName });
       }
 
-      // Bersihkan nama unit
       const unitName = typeof unitNameRaw === "string" ? unitNameRaw.trim().toLowerCase() : String(unitNameRaw).toLowerCase();
-      // Cari atau buat Unit
       let unit = await Unit.findOne({ where: { name: unitName } });
       if (!unit) {
         unit = await Unit.create({ name: unitName });
@@ -93,6 +87,7 @@ exports.importSales = async (req, res) => {
       });
 
       rows.push({
+        // id: nextId++, // Beri ID berdasarkan urutan
         date,
         customer_id: customer.id,
         vegetable_id: vegetable.id,
@@ -149,10 +144,18 @@ exports.importExpenses = async (req, res) => {
     await workbook.xlsx.load(req.file.buffer);
     const worksheet = workbook.worksheets[3];
 
+    const activeCount = await ExpensesTransaction.count({
+      where: {
+        deletedAt: null,
+      },
+    });
+
+    const startRow = 5 + activeCount + (activeCount > 0 ? 0 : 1);
+
     const rows = [];
     const updatedMonths = new Set();
 
-    for (let i = 5; i <= worksheet.rowCount; i++) {
+    for (let i = startRow; i <= worksheet.rowCount; i++) {
       const row = worksheet.getRow(i);
       const values = row.values;
 
