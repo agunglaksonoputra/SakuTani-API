@@ -1,4 +1,5 @@
 const authService = require("../services/auth.service");
+const dataMasterservice = require("../services/data-master.service");
 
 exports.register = async (req, res) => {
   try {
@@ -54,4 +55,23 @@ exports.changeUsername = async (req, res) => {
   } catch (err) {
     res.status(401).json({ success: false, error: err.message });
   }
+};
+
+exports.generateResetPassword = async (req, res) => {
+  try {
+      const { username } = req.body;
+      const data = await authService.generateResetCode({ username });
+      res.json({ success: true, message: "Reset code generated successfully", data });
+  } catch (err) {
+      res.status(401).json({ success: false, error: err.message });
+  }
+};
+
+exports.getActiveResetCodes = async (req, res) => {
+    try {
+        const data = await authService.getActiveResetCodes();
+        res.json({ success: true, data });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 };
