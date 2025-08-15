@@ -4,7 +4,7 @@ const router = express.Router();
 const authorize = require("../middlewares/authorize.middleware");
 
 // Import semua route modular
-const authRoutes = require("./auth.routes");
+// const authRoutes = require("./auth.routes");
 const excelRoute = require("./excel.routes");
 const monthlyReportRoute = require("./monthly-report.routes");
 const ownerRoute = require("./owner.routes");
@@ -23,7 +23,7 @@ const userRoutes = require("./user.routes");
 const auth = require("../middlewares/auth.middleware");
 
 // Daftarkan dengan prefix masing-masing
-router.use("/auth", authRoutes);
+// router.use("/auth", authRoutes);
 
 router.use("/excel", excelRoute);
 router.use("/report", auth, monthlyReportRoute);
